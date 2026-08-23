@@ -4,10 +4,13 @@ Extract ligands from PDB mmCIF files, find enantiomer pairs, keep drug-like liga
 
 Scripts are in this folder. Outputs go under `../Data/` (or `../test/` when `PIPELINE_TEST=1`). Paths: [`paths.py`](paths.py).
 
+Place gzipped mmCIF input in **`../Data/mmCIF/`** (`*.cif.gz`). That is `Data/mmCIF/` from the repository root. The pipeline writes decompressed files to `../Data/mmCIF_rename/`.
+
 ## Run
 
 ```bash
 export SCHRODINGER=/path/to/your/schrodinger
+# Optional: only if your archive is not Data/mmCIF
 export MMCIF_SOURCE=/path/to/your/mmCIF          # .cif.gz; default Data/mmCIF
 export MMCIF_RENAME=/path/to/your/mmCIF_rename   # decompressed .cif; default Data/mmCIF_rename
 bash run_data_preprocess.sh

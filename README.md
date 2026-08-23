@@ -41,6 +41,20 @@ These tools are **not** part of this repository’s license and are **not** avai
 
 These two tools are **not shipped** in this repository. Download them from [Universität Hamburg ZBH](https://software.zbh.uni-hamburg.de) after registration, then put the folders under `Data_preprocess/` and `Alignment/` as above. Activate each binary with your NAOMI license (`./unicon --license …` and `./LigandExtractor --license …`).
 
+### Input data (mmCIF)
+
+Put your PDB mmCIF files in **`Data/mmCIF/`** (from the repository root). The files must be gzip-compressed **`.cif.gz`**.
+
+```
+Enantiomers_binding_conformation/
+└── Data/
+    └── mmCIF/                 # you create this and place *.cif.gz here
+        ├── 1abc.cif.gz
+        └── …
+```
+
+`Data/mmCIF_rename/` is written by the pipeline (decompressed `.cif`); you do not need to fill it. To use another archive location, set `MMCIF_SOURCE` (and optionally `MMCIF_RENAME`) or pass `--mmcif-source`. In test mode the default input is `test/mmcif/`.
+
 ### Other dependencies
 
 | Dependency | Stages |
@@ -48,7 +62,7 @@ These two tools are **not shipped** in this repository. Download them from [Univ
 | RDKit, Python 3.13, `pandas`, `pytz`, `requests`, `tqdm` | Data Preprocess, Pharmacophore, Categorization |
 | BioPython | Alignment |
 | CDPL / CDPKit (pip, in `categorize_pipeline`) | Pharmacophore step 3.1 |
-| PDB mmCIF (`Data/mmCIF/` by default) | Data Preprocess |
+| PDB mmCIF (`Data/mmCIF/*.cif.gz`) | Data Preprocess |
 | Network (RCSB, UniProt APIs) | Data Preprocess |
 
 Stage-specific setup and paths are in each stage README.
@@ -141,10 +155,10 @@ enantiomer-pipeline --test alignment -- --skip-structalign
 enantiomer-pipeline --test pharmacophore -- --skip-generation
 ```
 
-Equivalent module invocation:
+The same commands work if you call the package with Python. Put the same stage and flags after `python -m enantiomer_pipeline`:
 
 ```bash
-python -m enantiomer_pipeline categorization
+python -m enantiomer_pipeline …
 ```
 
 Common options:
