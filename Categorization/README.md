@@ -17,7 +17,7 @@ bash run_categorization.sh
 Test (4a only): `bash ../test/run_categorization_test.sh`  
 Delete `Data/Categorization/` yourself for a full redo.
 
-Needs pandas and RDKit.
+Needs pandas and RDKit. Licensed software for earlier stages is listed in the [repository Prerequisites](../README.md#prerequisites).
 
 ## Steps
 

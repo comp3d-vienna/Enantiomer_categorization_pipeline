@@ -16,7 +16,7 @@ bash run_data_preprocess.sh
 Test: `bash ../test/run_data_preprocess_test.sh`  
 Offline: add `--skip-uniprot --skip-prepwizard`
 
-Needs RDKit, `requests`, `tqdm`, UniCON (`unicon_1.5.0/unicon`), Schrödinger PrepWizard, and RCSB access for UniProt.
+Needs RDKit, `requests`, `tqdm`, [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) (`unicon_1.5.0/unicon`; obtain from the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de)), a licensed Schrödinger install (PrepWizard), and RCSB access for UniProt.
 
 ## Steps
 

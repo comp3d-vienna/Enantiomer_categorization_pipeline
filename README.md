@@ -10,13 +10,48 @@ A computational pipeline for categorizing small-molecule enantiomer binding conf
 | :-- | :--  |
 | (1/5) code repository              | [![github repo badge](https://img.shields.io/badge/github-repo-000.svg?logo=github&labelColor=gray&color=blue)](https://github.com/Huanni05/enantiomer_binding_conformation) |
 | (2/5) license                      | [![github license badge](https://img.shields.io/github/license/Huanni05/enantiomer_binding_conformation)](https://github.com/Huanni05/enantiomer_binding_conformation) |
-| (3/5) community registry           | [![RSD](https://img.shields.io/badge/rsd-enantiomer_binding_conformation-00a3e3.svg)](https://www.research-software.nl/software/enantiomer_binding_conformation) [![workflow pypi badge](https://img.shields.io/pypi/v/enantiomer_binding_conformation.svg?colorB=blue)](https://pypi.python.org/project/enantiomer_binding_conformation/) |
+| (3/5) community registry           | [![RSD](https://img.shields.io/badge/rsd-enantiomer_binding_conformation-00a3e3.svg)](https://www.research-software.nl/software/enantiomer_binding_conformation) |
 | (4/5) citation                     | [![DOI](https://zenodo.org/badge/DOI/<replace-with-created-DOI>.svg)](https://doi.org/<replace-with-created-DOI>)|
 | (5/5) checklist                    | [![workflow cii badge](https://bestpractices.coreinfrastructure.org/projects/<replace-with-created-project-identifier>/badge)](https://bestpractices.coreinfrastructure.org/projects/<replace-with-created-project-identifier>) |
 | howfairis                          | [![fair-software badge](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu) |
 | **Other best practices**           | &nbsp; |
 | **GitHub Actions**                 | &nbsp; |
 | Build                              | [![build](https://github.com/Huanni05/enantiomer_binding_conformation/actions/workflows/build.yml/badge.svg)](https://github.com/Huanni05/enantiomer_binding_conformation/actions/workflows/build.yml) |
+
+## Prerequisites
+
+**Python environment** — use one **Python 3.13** conda env for all Python pipeline steps:
+
+```bash
+conda activate categorize_pipeline
+python -m pip install -e .
+```
+
+`categorize_pipeline` includes CDPL (required for pharmacophore step 3.1), RDKit, pandas, and BioPython. The editable install from this clone also registers the `enantiomer-pipeline` CLI (see [Package usage](#package-usage)).
+
+### Licensed third-party software
+
+These tools are **not** part of this repository’s license and are **not** available from PyPI. You need your own install and a license that covers your use.
+
+| Software | License / availability | Expected location |
+| -------- | ---------------------- | ----------------- |
+| [Schrödinger](https://www.schrodinger.com/) (PrepWizard, `structconvert`, `structalign`) | Commercial Schrödinger license | Set `SCHRODINGER` to your install root |
+| [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) | Academic / non-commercial via the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de); evaluation license for non-academic users | `Data_preprocess/unicon_1.5.0/unicon` |
+| [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) | Same NAOMI ChemBio Suite terms as UniCON | `Alignment/LigandExtractor_1.0.1/LigandExtractor` |
+
+Download UniCON and LigandExtractor from [Universität Hamburg ZBH](https://software.zbh.uni-hamburg.de) after registration. Place the binaries in the paths above (or point your scripts at your local copies).
+
+### Other dependencies
+
+| Dependency | Stages |
+| ---------- | ------ |
+| RDKit, Python 3.13, `pandas`, `pytz`, `requests`, `tqdm` | Data Preprocess, Pharmacophore, Categorization |
+| BioPython | Alignment |
+| CDPL / CDPKit (pip, in `categorize_pipeline`) | Pharmacophore step 3.1 |
+| PDB mmCIF (`Data/mmCIF/` by default) | Data Preprocess |
+| Network (RCSB, UniProt APIs) | Data Preprocess |
+
+Stage-specific setup and paths are in each stage README.
 
 ## Overview
 
@@ -64,6 +99,8 @@ Enantiomers_binding_conformation/
 
 ## Installation
 
+This pipeline is distributed from GitHub, not PyPI. Several stages need licensed third-party software that you must obtain yourself (see [Prerequisites](#prerequisites)).
+
 Use one **Python 3.13** conda env (`categorize_pipeline`) for all Python pipeline steps.
 
 ```bash
@@ -75,7 +112,7 @@ conda activate categorize_pipeline
 python -m pip install -e .
 ```
 
-This registers the `enantiomer-pipeline` command and the importable `enantiomer_pipeline` module. CDPKit (CDPL), RDKit, pandas, and BioPython are installed in the env.
+This registers the `enantiomer-pipeline` command and the importable `enantiomer_pipeline` module from the clone. CDPKit (CDPL), RDKit, pandas, and BioPython are installed in the env.
 
 ---
 
@@ -131,7 +168,7 @@ from enantiomer_pipeline import PipelineConfig, run_stage, run_all
 
 config = PipelineConfig(
     test_mode=True,
-    schrodinger="/data/shared/software/schroedinger2025-3",
+    schrodinger="/path/to/your/schrodinger",
 )
 
 # Run one stage
@@ -261,30 +298,6 @@ bash test/run_categorization_test.sh
 Details: **[Categorization/README.md](Categorization/README.md)**
 
 ---
-
-## Prerequisites (summary)
-
-**Python environment** — use one **Python 3.13** conda env for all Python pipeline steps:
-
-```bash
-conda activate categorize_pipeline
-python -m pip install -e .
-```
-
-`categorize_pipeline` includes CDPL (required for pharmacophore step 3.1), RDKit, pandas, and BioPython. The editable install also registers the `enantiomer-pipeline` CLI (see [Package usage](#package-usage)).
-
-| Dependency                                            | Stages                                            |
-| ----------------------------------------------------- | ------------------------------------------------- |
-| RDKit, Python 3.13, `pandas`, `pytz`, `requests`, `tqdm` | Data Preprocess, Pharmacophore, Categorization |
-| UniCON (`Data_preprocess/unicon_1.5.0/unicon`)        | Data Preprocess                                   |
-| Schrödinger (`$SCHRODINGER`)                          | Data Preprocess, Alignment                        |
-| BioPython                                             | Alignment                                         |
-| LigandExtractor (`Alignment/LigandExtractor_1.0.1/`)  | Alignment                                         |
-| CDPL / CDPKit (pip, in `categorize_pipeline`)         | Pharmacophore step 3.1                            |
-| PDB mmCIF (`Data/mmCIF/` by default)                  | Data Preprocess                                   |
-| Network (RCSB, UniProt APIs)                          | Data Preprocess                                   |
-
-Stage-specific setup and paths are in each stage README.
 
 ## Credits
 
