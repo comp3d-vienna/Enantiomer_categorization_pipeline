@@ -83,7 +83,7 @@ check_python_deps() {
     if ! "$PYTHON" -c "import pandas, pytz, rdkit" 2>/dev/null; then
         echo "Error: missing Python dependencies (pandas, pytz, and/or rdkit)." >&2
         echo "Python used: $PYTHON" >&2
-        echo "Activate Python 3.9 pipeline env, e.g.: conda activate categorize_pipeline" >&2
+        echo "Activate Python 3.13 pipeline env, e.g.: conda activate categorize_pipeline" >&2
         echo "Or install: $PYTHON -m pip install -r ${SCRIPT_DIR}/requirements.txt" >&2
         exit 1
     fi

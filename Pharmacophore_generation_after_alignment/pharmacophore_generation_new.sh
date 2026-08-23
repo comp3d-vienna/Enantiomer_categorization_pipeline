@@ -34,7 +34,7 @@ RESOLVE_PYTHON="${SCRIPT_DIR}/resolve_python.sh"
 WATER_RESIDUES="HOH"
 TIMEOUT_SEC=90
 
-# Step 3.1 uses the same Python 3.9 env as step 3.2 (CDPL + pandas).
+# Step 3.1 uses the same Python 3.13 env as step 3.2 (CDPL + pandas).
 # shellcheck source=resolve_python.sh
 source "$RESOLVE_PYTHON"
 if [[ -z "${PIPELINE_PYTHON:-}" ]]; then

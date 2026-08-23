@@ -4,7 +4,7 @@ Build interaction pharmacophores from aligned paired complexes and write one fea
 
 Needs [Alignment](../Alignment/README.md) through step 2.4.
 
-Use one **Python 3.9** env with CDPL, pandas, and pytz (recommended: `categorize_pipeline`). Resolver: [`resolve_python.sh`](resolve_python.sh). Paths: [`paths.py`](paths.py).
+Use one **Python 3.13** env with CDPL, pandas, and pytz (recommended: `categorize_pipeline`). Resolver: [`resolve_python.sh`](resolve_python.sh). Paths: [`paths.py`](paths.py).
 
 ## Run
 

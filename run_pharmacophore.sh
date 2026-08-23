@@ -40,7 +40,7 @@ Options:
   -h, --help          Show this help message
 
 Environment:
-  PYTHON_CMD          Python 3.9 for all pipeline steps (default: active env)
+  PYTHON_CMD          Python 3.13 for all pipeline steps (default: active env)
   PIPELINE_CONDA_ENV  Conda env name fallback (default: categorize_pipeline)
 
 Examples:

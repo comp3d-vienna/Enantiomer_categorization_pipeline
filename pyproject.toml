@@ -31,6 +31,13 @@ readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12"
 version = "3.13.0"
 
+[project.scripts]
+enantiomer-pipeline = "enantiomer_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["enantiomer_binding_conformation*", "enantiomer_pipeline*"]
+
 [dependency-groups]
 dev = [
     "build",  # build is not only used in publishing (below), but also in the template's test suite

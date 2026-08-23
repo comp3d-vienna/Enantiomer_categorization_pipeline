@@ -22,7 +22,7 @@ elif command -v python >/dev/null 2>&1; then
     PYTHON=python
 else
     echo "Error: python3 or python not found in PATH." >&2
-    echo "Activate your Python 3.9 env or set PYTHON_CMD, e.g.:" >&2
+    echo "Activate your Python 3.13 env or set PYTHON_CMD, e.g.:" >&2
     echo "  conda activate categorize_pipeline" >&2
     echo "  export PYTHON_CMD=\$(which python)" >&2
     exit 1
