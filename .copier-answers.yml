@@ -1,0 +1,21 @@
+# Changes here will be overwritten by Copier
+SelectCitation: []
+SelectCodeQualityFeatures: []
+SelectCommunityFeatures: []
+SelectDocumentationFeatures: []
+SelectPublishReleaseFeatures:
+- SelectCitation_flag
+- AddZenodo_flag
+_commit: b95c8a6
+_src_path: git+https://github.com/wschuell/python-template
+copyright_holder: Huanni Zhang
+email: huanni.zhang@univie.ac.at
+full_name: Huanni Zhang
+github_organization: Huanni05
+keywords: small-molecule, enantiomers
+license: MIT
+package_name: enantiomer_binding_conformation
+package_short_description: A computational pipeline of small-molecule enantiomers
+    binding conformation categorization
+template_profile: ask
+version: 3.13.0

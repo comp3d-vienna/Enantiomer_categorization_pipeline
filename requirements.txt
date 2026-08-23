@@ -1,0 +1,20 @@
+# Python dependencies for Organize_script pipeline (Python 3.9 only)
+#
+# Recommended setup:
+#   conda activate categorize_pipeline
+#   python -m pip install -r requirements.txt
+#
+# Also install via conda in categorize_pipeline (if not already present):
+#   conda install -c conda-forge rdkit biopython scikit-learn
+
+pandas>=2.0
+pytz
+tqdm
+requests
+biopython
+scikit-learn>=1.3
+matplotlib>=3.7
+
+# Pharmacophore step 3.1
+# CDPL — Chemical Data Processing Toolkit (installed in categorize_pipeline; needs PYTHONPATH
+#        to CDPKit when not using `conda activate categorize_pipeline`)
