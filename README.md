@@ -36,10 +36,10 @@ These tools are **not** part of this repository’s license and are **not** avai
 | Software | License / availability | Expected location |
 | -------- | ---------------------- | ----------------- |
 | [Schrödinger](https://www.schrodinger.com/) (PrepWizard, `structconvert`, `structalign`) | Commercial Schrödinger license | Set `SCHRODINGER` to your install root |
-| [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) | Academic / non-commercial via the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de); evaluation license for non-academic users | `Data_preprocess/unicon_1.5.0/unicon` |
-| [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) | Same NAOMI ChemBio Suite terms as UniCON | `Alignment/LigandExtractor_1.0.1/LigandExtractor` |
+| [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) | Academic / non-commercial via the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de); evaluation license for non-academic users | Place the unpacked tree at `Data_preprocess/unicon_1.5.0/` so the binary is `Data_preprocess/unicon_1.5.0/unicon` |
+| [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) | Same NAOMI ChemBio Suite terms as UniCON | Place the unpacked tree at `Alignment/LigandExtractor_1.0.1/` so the binary is `Alignment/LigandExtractor_1.0.1/LigandExtractor` |
 
-Download UniCON and LigandExtractor from [Universität Hamburg ZBH](https://software.zbh.uni-hamburg.de) after registration. Place the binaries in the paths above (or point your scripts at your local copies).
+These two tools are **not shipped** in this repository. Download them from [Universität Hamburg ZBH](https://software.zbh.uni-hamburg.de) after registration, then put the folders under `Data_preprocess/` and `Alignment/` as above. Activate each binary with your NAOMI license (`./unicon --license …` and `./LigandExtractor --license …`).
 
 ### Other dependencies
 

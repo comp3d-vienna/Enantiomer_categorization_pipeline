@@ -19,7 +19,7 @@ Test: `bash ../test/run_alignment_test.sh`
 Skip Schrödinger: `--skip-mae-convert --skip-structalign`  
 Skip ligand extract: `--skip-ligand-extract`
 
-Needs BioPython, a licensed Schrödinger install (`structconvert`, `structalign`), and [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) (`LigandExtractor_1.0.1/`; obtain from the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de)).
+Needs BioPython, a licensed Schrödinger install (`structconvert`, `structalign`), and [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) (obtain from the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de) and place the tree at `Alignment/LigandExtractor_1.0.1/` so the binary is `LigandExtractor_1.0.1/LigandExtractor`). LigandExtractor is not included in this repository.
 
 ## Steps
 

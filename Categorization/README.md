@@ -17,7 +17,9 @@ bash run_categorization.sh
 Test (4a only): `bash ../test/run_categorization_test.sh`  
 Delete `Data/Categorization/` yourself for a full redo.
 
-Needs pandas and RDKit. Licensed software for earlier stages is listed in the [repository Prerequisites](../README.md#prerequisites).
+Needs pandas and RDKit.
+
+Earlier stages need [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) under `Data_preprocess/unicon_1.5.0/` and [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) under `Alignment/LigandExtractor_1.0.1/`. Those folders are not in the repository; download them from the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de) and place them there. See [repository Prerequisites](../README.md#prerequisites).
 
 ## Steps
 

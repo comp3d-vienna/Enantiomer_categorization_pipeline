@@ -67,3 +67,7 @@ venv.bak/
 *.swp
 *.swo
 *.orig
+
+# User-supplied licensed binaries (download from Universität Hamburg ZBH)
+Data_preprocess/unicon_1.5.0/
+Alignment/LigandExtractor_1.0.1/
