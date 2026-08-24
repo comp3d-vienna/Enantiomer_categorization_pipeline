@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run all Data_preprocess steps on production data under Data/.
+# Run all Data_preprocess steps (1.1-1.4).
 
 if [ -z "${BASH_VERSION:-}" ]; then
     exec /bin/bash "$0" "$@"
@@ -7,14 +7,14 @@ fi
 
 set -euo pipefail
 
-# Ensure production paths (not test/)
-unset PIPELINE_TEST
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="${SCRIPT_DIR}/Data"
 PREPROCESS_DIR="${SCRIPT_DIR}/Data_preprocess"
-export MMCIF_SOURCE="${MMCIF_SOURCE:-${DATA_DIR}/mmCIF}"
-export MMCIF_RENAME="${MMCIF_RENAME:-${DATA_DIR}/mmCIF_rename}"
+PROJECT_ROOT="${SCRIPT_DIR}"
+
+# Published drivers never use the private repo-root test/ tree.
+unset PIPELINE_TEST
+# shellcheck source=Data_preprocess/data_root.sh
+source "${PROJECT_ROOT}/Data_preprocess/data_root.sh"
 
 if [[ -n "${PYTHON_CMD:-}" ]]; then
     PYTHON="$PYTHON_CMD"
@@ -37,12 +37,13 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Run the full Data_preprocess pipeline (steps 1.1-1.4) on production data.
+Run the full Data_preprocess pipeline (steps 1.1-1.4).
 
 Set SCHRODINGER, MMCIF_SOURCE, and MMCIF_RENAME to your local paths
-before running (see Data_preprocess/README.md). If MMCIF_* are unset,
-mmCIF input is Data/mmCIF and decompressed CIFs go to Data/mmCIF_rename.
-Pipeline outputs are written under Data/.
+before running (see Data_preprocess/README.md). Defaults:
+  Data/mmCIF and Data/mmCIF_rename
+
+If MMCIF_SOURCE is Data/test/mmCIF, all outputs go under Data/test/.
 
 Options:
   --skip-uniprot      Skip RCSB UniProt API queries in step 1.3
@@ -51,16 +52,15 @@ Options:
 
 Environment:
   PYTHON_CMD          Python executable (default: python3, then python)
-  MMCIF_SOURCE        Your PDB mmCIF gzip archive (default: Data/mmCIF)
-  MMCIF_RENAME        Your decompressed mmCIF directory (default: Data/mmCIF_rename)
-  SCHRODINGER         Your Schrödinger install root (required for step 1.4
+  MMCIF_SOURCE        PDB mmCIF gzip archive (default: Data/mmCIF)
+  MMCIF_RENAME        Decompressed mmCIF directory (default: Data/mmCIF_rename)
+  SCHRODINGER         Schrödinger install root (required for step 1.4
                     unless --skip-prepwizard is used)
 
 Examples:
   export SCHRODINGER=/path/to/your/schrodinger
-  export MMCIF_SOURCE=/path/to/your/mmCIF
-  export MMCIF_RENAME=/path/to/your/mmCIF_rename
   bash run_data_preprocess.sh
+  MMCIF_SOURCE=Data/test/mmCIF bash run_data_preprocess.sh
   bash run_data_preprocess.sh --skip-uniprot --skip-prepwizard
 EOF
 }
@@ -87,6 +87,24 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [[ -n "${MMCIF_SOURCE:-}" ]]; then
+    MMCIF_SOURCE="$(pipeline_abs_path "$MMCIF_SOURCE")"
+    export MMCIF_SOURCE
+fi
+
+DATA_DIR="$(select_pipeline_data_dir)"
+export PIPELINE_DATA_DIR="$DATA_DIR"
+
+if [[ -n "${MMCIF_RENAME:-}" ]]; then
+    MMCIF_RENAME="$(pipeline_abs_path "$MMCIF_RENAME")"
+else
+    MMCIF_RENAME="${DATA_DIR}/mmCIF_rename"
+fi
+if [[ -z "${MMCIF_SOURCE:-}" ]]; then
+    MMCIF_SOURCE="${DATA_DIR}/mmCIF"
+fi
+export MMCIF_SOURCE MMCIF_RENAME
+
 step() {
     echo ""
     echo "============================================================"
@@ -97,7 +115,7 @@ step() {
 require_mmcif_source() {
     if [[ ! -d "$MMCIF_SOURCE" ]]; then
         echo "Error: mmCIF source not found: $MMCIF_SOURCE" >&2
-        echo "Place downloaded mmCIF files in Data/mmCIF, or set MMCIF_SOURCE." >&2
+        echo "Place gzipped mmCIF files in Data/mmCIF/ or Data/test/mmCIF/." >&2
         exit 1
     fi
     if [[ -z "$(find "$MMCIF_SOURCE" -name '*.cif.gz' -print -quit 2>/dev/null)" ]]; then
@@ -106,7 +124,7 @@ require_mmcif_source() {
     fi
 }
 
-echo "Production Data_preprocess pipeline"
+echo "Data_preprocess pipeline"
 echo "Data directory:  ${DATA_DIR}"
 echo "mmCIF source:    ${MMCIF_SOURCE}"
 echo "mmCIF rename:    ${MMCIF_RENAME}"

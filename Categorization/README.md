@@ -4,16 +4,17 @@ Compute closest-pair **RMSD** and **SILIRID similarity** for every paired-enanti
 
 Needs [Pharmacophore generation](../Pharmacophore_generation_after_alignment/README.md) (steps 3.1–3.2). The pipeline does not read or write manual labels.
 
-Scripts are in this folder. Outputs go under `../Data/Categorization/` (or `../test/Categorization/` when `PIPELINE_TEST=1`). Paths: [`paths.py`](paths.py).
+Scripts are in this folder. Outputs go under `../Data/Categorization/`. Paths: [`paths.py`](paths.py).
 
 ## Run
+
+From the repository root:
 
 ```bash
 conda activate categorize_pipeline
 bash run_categorization.sh
 ```
 
-Test: `bash ../test/run_categorization_test.sh`  
 Delete `Data/Categorization/` yourself for a full redo.
 
 Needs pandas and RDKit.
@@ -29,7 +30,7 @@ Earlier stages need [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/softwa
 
 The closest pair is the m0–m1 pose pair with the smallest mean atom distance. SILIRID similarity and the two 160-D count fingerprints for that pair (`closest_cross_tag_silirid_a` / `closest_cross_tag_silirid_b`) are written in step 4b. Slot order is `silirid_fingerprint_slots.csv` (20 amino acids × 8 feature types). Each slot count is capped at 3 (`silirid_count_cap`), matching the similarity calculation.
 
-## Outputs (`Data/Categorization/` or `test/Categorization/`)
+## Outputs (`Data/Categorization/`)
 
 ```
 feature_table.csv

@@ -2,11 +2,13 @@
 
 Extract ligands from PDB mmCIF files, find enantiomer pairs, keep drug-like ligands, add UniProt IDs, and prepare proteins with Schrödinger.
 
-Scripts are in this folder. Outputs go under `../Data/` (or `../test/` when `PIPELINE_TEST=1`). Paths: [`paths.py`](paths.py).
+Scripts are in this folder. Outputs go under `../Data/`. Paths: [`paths.py`](paths.py).
 
-Place gzipped mmCIF input in **`../Data/mmCIF/`** (`*.cif.gz`). That is `Data/mmCIF/` from the repository root. The pipeline writes decompressed files to `../Data/mmCIF_rename/`.
+Place gzipped mmCIF input in **`../Data/mmCIF/`** (`*.cif.gz`). The pipeline writes decompressed files to `../Data/mmCIF_rename/`. Test data is under `../Data/test/mmCIF/` (outputs under `../Data/test/`).
 
 ## Run
+
+From the repository root:
 
 ```bash
 export SCHRODINGER=/path/to/your/schrodinger
@@ -16,7 +18,6 @@ export MMCIF_RENAME=/path/to/your/mmCIF_rename   # decompressed .cif; default Da
 bash run_data_preprocess.sh
 ```
 
-Test: `bash ../test/run_data_preprocess_test.sh`  
 Offline: add `--skip-uniprot --skip-prepwizard`
 
 Needs RDKit, `requests`, `tqdm`, [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) (obtain from the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de) and place the tree at `Data_preprocess/unicon_1.5.0/` so the binary is `unicon_1.5.0/unicon`), a licensed Schrödinger install (PrepWizard), and RCSB access for UniProt. UniCON is not included in this repository.
@@ -37,10 +38,10 @@ Identifiers look like `{pdb}_{het}_{chain}_{resseq}` (and `_m0` / `_m1` in `db_i
 
 Existing files are skipped on re-run. Delete the relevant `Data/` folders for a full redo.
 
-## Outputs (`Data/` or `test/`)
+## Outputs (`Data/`)
 
 ```
-ligand_sdf_structure_from_mmCIF(_separated)/   # 1.1a (test: ligand_sdf(_separated)/)
+ligand_sdf_structure_from_mmCIF(_separated)/   # 1.1a
 ligand_sdf_..._InChI/                          # 1.1b
 chiral_classification_results/                 # 1.1c–1.3
 db_ids_with_m_layer.txt                        # 1.3

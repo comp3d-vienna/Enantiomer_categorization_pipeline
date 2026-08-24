@@ -1,22 +1,20 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="$(cd "$SCRIPT_DIR/../Data" && pwd)"
-TEST_DIR="$(cd "$SCRIPT_DIR/../test" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=data_root.sh
+source "${PROJECT_ROOT}/Data_preprocess/data_root.sh"
+DATA_DIR="$(select_pipeline_data_dir)"
+WORK_DIR="${DATA_DIR}"
 
 if [[ "${PIPELINE_TEST:-}" == "1" ]]; then
-    WORK_DIR="${TEST_DIR}"
     CIF_DIR="${MMCIF_RENAME:-${WORK_DIR}/mmcif_rename}"
-    Enantiomer_list_identifier="${WORK_DIR}/db_ids_with_m_layer.txt"
-    PREPWIZARD_TIMEOUT_LOG="${WORK_DIR}/prepwizard_timeout_pdbids.txt"
-    PREPWIZARD_FAILED_LOG="${WORK_DIR}/prepwizard_failed_pdbids.txt"
 else
-    WORK_DIR="${DATA_DIR}"
     CIF_DIR="${MMCIF_RENAME:-${DATA_DIR}/mmCIF_rename}"
-    Enantiomer_list_identifier="${WORK_DIR}/db_ids_with_m_layer.txt"
-    PREPWIZARD_TIMEOUT_LOG="${WORK_DIR}/prepwizard_timeout_pdbids.txt"
-    PREPWIZARD_FAILED_LOG="${WORK_DIR}/prepwizard_failed_pdbids.txt"
 fi
+Enantiomer_list_identifier="${WORK_DIR}/db_ids_with_m_layer.txt"
+PREPWIZARD_TIMEOUT_LOG="${WORK_DIR}/prepwizard_timeout_pdbids.txt"
+PREPWIZARD_FAILED_LOG="${WORK_DIR}/prepwizard_failed_pdbids.txt"
 
 MAE_OUTPUT_DIR="${WORK_DIR}/Enantiomer_pdbstructure_maeformat"
 PREPWIZARD_OUTPUT_DIR="${WORK_DIR}/Enantiomer_protein_preperation/Enantiomer_prepwizard_results"

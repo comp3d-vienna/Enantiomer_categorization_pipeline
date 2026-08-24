@@ -2,29 +2,26 @@
 # Combined script: Extract ligand structure from PDB, split multi-component SDF files
 #
 # Environment:
-#   PIPELINE_TEST=1   Route outputs under ../test/
-#   MMCIF_SOURCE      Gzip mmCIF/PDB archive
-#                     (production default: ../Data/mmCIF;
-#                      test default: ../test/mmcif)
-#   MMCIF_RENAME      Decompressed structures
-#                     (production default: ../Data/mmCIF_rename;
-#                      test default: ../test/mmcif_rename)
+#   MMCIF_SOURCE      Gzip mmCIF/PDB archive (default: ../Data/mmCIF;
+#                     small trial: ../Data/test/mmCIF)
+#   MMCIF_RENAME      Decompressed structures (default: ../Data/mmCIF_rename)
 #
 # Resume: existing non-empty SDF and decompressed structure files are skipped
 # per PDB. A PDB is not re-split if any separated SDF for that code already exists.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="$(cd "$SCRIPT_DIR/../Data" && pwd)"
-TEST_DIR="$(cd "$SCRIPT_DIR/../test" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=data_root.sh
+source "${PROJECT_ROOT}/Data_preprocess/data_root.sh"
+DATA_DIR="$(select_pipeline_data_dir)"
 
 if [[ "${PIPELINE_TEST:-}" == "1" ]]; then
-    # TEST (run test/run_data_preprocess_test.sh or export PIPELINE_TEST=1)
-    INPUT_DIR="${MMCIF_SOURCE:-${TEST_DIR}/mmcif}"
-    PDB_RENAME_DIR="${MMCIF_RENAME:-${TEST_DIR}/mmcif_rename}"
-    LIGAND_SDF_DIR="${TEST_DIR}/ligand_sdf"
-    SEPARATED_SDF_DIR="${TEST_DIR}/ligand_sdf_separated"
-    TIMER_DIR="${TEST_DIR}/timer_mmCIF"
-    log_file="${TEST_DIR}/extract_split_procedure_errors.log"
+    INPUT_DIR="${MMCIF_SOURCE:-${DATA_DIR}/mmcif}"
+    PDB_RENAME_DIR="${MMCIF_RENAME:-${DATA_DIR}/mmcif_rename}"
+    LIGAND_SDF_DIR="${DATA_DIR}/ligand_sdf"
+    SEPARATED_SDF_DIR="${DATA_DIR}/ligand_sdf_separated"
+    TIMER_DIR="${DATA_DIR}/timer_mmCIF"
+    log_file="${DATA_DIR}/extract_split_procedure_errors.log"
 else
     INPUT_DIR="${MMCIF_SOURCE:-${DATA_DIR}/mmCIF}"
     PDB_RENAME_DIR="${MMCIF_RENAME:-${DATA_DIR}/mmCIF_rename}"

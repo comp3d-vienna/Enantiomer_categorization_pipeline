@@ -4,14 +4,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="$(cd "$SCRIPT_DIR/../Data" && pwd)"
-TEST_DIR="$(cd "$SCRIPT_DIR/../test" && pwd)"
-
-if [[ "${PIPELINE_TEST:-}" == "1" ]]; then
-    WORK_DIR="${TEST_DIR}"
-else
-    WORK_DIR="${DATA_DIR}"
-fi
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=../Data_preprocess/data_root.sh
+source "${PROJECT_ROOT}/Data_preprocess/data_root.sh"
+DATA_DIR="$(select_pipeline_data_dir)"
+WORK_DIR="${DATA_DIR}"
 
 ALIGNMENT_DIR="${WORK_DIR}/Alignment"
 PREP_PDB_DIR="${ALIGNMENT_DIR}/Enantiomer_prep_pdbformat"

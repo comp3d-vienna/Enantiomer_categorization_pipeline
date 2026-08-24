@@ -15,7 +15,6 @@ from .runner import STAGES, format_stage_result, run_all, run_stage
 def _build_config(args: argparse.Namespace) -> PipelineConfig:
     return PipelineConfig(
         project_root=args.project_root,
-        test_mode=args.test,
         mmcif_source=args.mmcif_source,
         python_cmd=args.python_cmd,
         schrodinger=args.schrodinger,
@@ -84,18 +83,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--project-root",
         type=str,
         default=None,
-        help="Path to Organize_script repository root (default: auto-detect).",
-    )
-    parser.add_argument(
-        "--test",
-        action="store_true",
-        help="Use test/ outputs and test/run_*_test.sh drivers (sets PIPELINE_TEST=1).",
+        help="Path to the repository root (default: auto-detect).",
     )
     parser.add_argument(
         "--mmcif-source",
         dest="mmcif_source",
         default=None,
-        help="PDB mmCIF archive root for preprocess (MMCIF_SOURCE; default: Data/mmCIF).",
+        help=(
+            "PDB mmCIF archive root for preprocess (MMCIF_SOURCE). "
+            "Default: Data/mmCIF. Test data: Data/test/mmCIF (outputs under Data/test)."
+        ),
     )
     parser.add_argument(
         "--python-cmd",

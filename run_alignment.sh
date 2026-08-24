@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run Alignment steps 2.1-2.4 on production data under Data/.
+# Run Alignment steps 2.1-2.4.
 
 if [ -z "${BASH_VERSION:-}" ]; then
     exec /bin/bash "$0" "$@"
@@ -7,12 +7,15 @@ fi
 
 set -euo pipefail
 
-# Ensure production paths (not test/)
-unset PIPELINE_TEST
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="${SCRIPT_DIR}/Data"
 ALIGNMENT_DIR="${SCRIPT_DIR}/Alignment"
+PROJECT_ROOT="${SCRIPT_DIR}"
+
+unset PIPELINE_TEST
+# shellcheck source=Data_preprocess/data_root.sh
+source "${PROJECT_ROOT}/Data_preprocess/data_root.sh"
+DATA_DIR="$(select_pipeline_data_dir)"
+export PIPELINE_DATA_DIR="$DATA_DIR"
 
 if [[ -n "${PYTHON_CMD:-}" ]]; then
     PYTHON="$PYTHON_CMD"
@@ -36,7 +39,7 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Run Alignment steps 2.1-2.4 on production outputs under Data/.
+Run Alignment steps 2.1-2.4.
 
 Prerequisite: complete Data_preprocess (steps 1.1-1.4), especially:
   Data/chiral_classification_results/filtered_enantiomer_with_uniprot_new.txt
@@ -99,11 +102,11 @@ step() {
 require_preprocess_inputs() {
     local missing=0
     if [[ ! -f "${DATA_DIR}/chiral_classification_results/filtered_enantiomer_with_uniprot_new.txt" ]]; then
-        echo "Missing: Data/chiral_classification_results/filtered_enantiomer_with_uniprot_new.txt"
+        echo "Missing: ${DATA_DIR}/chiral_classification_results/filtered_enantiomer_with_uniprot_new.txt"
         missing=1
     fi
     if [[ ! -f "${DATA_DIR}/db_ids_with_m_layer.txt" ]]; then
-        echo "Missing: Data/db_ids_with_m_layer.txt"
+        echo "Missing: ${DATA_DIR}/db_ids_with_m_layer.txt"
         missing=1
     fi
     local prep_mae_dir="${DATA_DIR}/Enantiomer_protein_preperation/Enantiomer_prepwizard_results"
@@ -114,13 +117,13 @@ require_preprocess_inputs() {
         fi
     fi
     if [[ "$missing" -eq 1 ]]; then
-        echo "Error: Data_preprocess outputs not found under Data/." >&2
+        echo "Error: Data_preprocess outputs not found under ${DATA_DIR}." >&2
         echo "Complete Data_preprocess before running alignment." >&2
         exit 1
     fi
 }
 
-echo "Production alignment pipeline"
+echo "Alignment pipeline"
 echo "Data directory: ${DATA_DIR}"
 echo "SCHRODINGER:    ${SCHRODINGER:-<not set>}"
 

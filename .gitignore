@@ -71,3 +71,12 @@ venv.bak/
 # User-supplied licensed binaries (download from Universität Hamburg ZBH)
 Data_preprocess/unicon_1.5.0/
 Alignment/LigandExtractor_1.0.1/
+
+# Local debug tree (not part of the published workflow)
+/test/
+
+# Trial run outputs (keep only the empty mmCIF input folder)
+Data/test/**
+!Data/test/mmCIF/
+!Data/test/mmCIF/.gitkeep
+Data/test/mmCIF/*.cif.gz

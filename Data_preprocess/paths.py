@@ -1,20 +1,44 @@
-"""Central path configuration for pipeline data under Organize_script/Data/."""
+"""Central path configuration for pipeline data under Data/ (or Data/test/)."""
 
 import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-DATA_DIR = os.path.join(PROJECT_ROOT, "Data")
-TEST_DIR = os.path.join(PROJECT_ROOT, "test")
+
+
+def _abs(path):
+    if not os.path.isabs(path):
+        path = os.path.join(PROJECT_ROOT, path)
+    return os.path.normpath(os.path.abspath(path))
+
+
+PRODUCTION_DATA = _abs(os.path.join(PROJECT_ROOT, "Data"))
+TRIAL_DATA = _abs(os.path.join(PRODUCTION_DATA, "test"))
+TRIAL_MMCIF = _abs(os.path.join(TRIAL_DATA, "mmCIF"))
 
 IS_TEST = os.environ.get("PIPELINE_TEST", "") == "1"
-BASE_DIR = TEST_DIR if IS_TEST else DATA_DIR
+
+
+def _select_data_dir():
+    if IS_TEST:
+        return _abs(os.path.join(PROJECT_ROOT, "test"))
+    override = os.environ.get("PIPELINE_DATA_DIR")
+    if override:
+        return _abs(override)
+    mmcif = os.environ.get("MMCIF_SOURCE")
+    if mmcif and _abs(mmcif) == TRIAL_MMCIF:
+        return TRIAL_DATA
+    return PRODUCTION_DATA
+
+
+DATA_DIR = _select_data_dir()
+BASE_DIR = DATA_DIR
 
 # Step 1.1 — ligand extraction
 if IS_TEST:
-    LIGAND_SDF_DIR = os.path.join(TEST_DIR, "ligand_sdf")
-    SEPARATED_SDF_DIR = os.path.join(TEST_DIR, "ligand_sdf_separated")
-    INCHI_DIR = os.path.join(TEST_DIR, "ligand_sdf_separated_InChI")
+    LIGAND_SDF_DIR = os.path.join(DATA_DIR, "ligand_sdf")
+    SEPARATED_SDF_DIR = os.path.join(DATA_DIR, "ligand_sdf_separated")
+    INCHI_DIR = os.path.join(DATA_DIR, "ligand_sdf_separated_InChI")
 else:
     LIGAND_SDF_DIR = os.path.join(DATA_DIR, "ligand_sdf_structure_from_mmCIF")
     SEPARATED_SDF_DIR = os.path.join(DATA_DIR, "ligand_sdf_structure_from_mmCIF_separated")
@@ -62,18 +86,12 @@ PREPWIZARD_OUTPUT_DIR = os.path.join(
 PREPWIZARD_TIMEOUT_LOG = os.path.join(BASE_DIR, "prepwizard_timeout_pdbids.txt")
 PREPWIZARD_FAILED_LOG = os.path.join(BASE_DIR, "prepwizard_failed_pdbids.txt")
 
-# mmCIF archive (gzip) and decompressed structures from step 1.1a / 1.4.
-# Honor MMCIF_SOURCE / MMCIF_RENAME when set; otherwise use production or test defaults.
-_DEFAULT_MMCIF_SOURCE = (
-    os.path.join(TEST_DIR, "mmcif") if IS_TEST else os.path.join(DATA_DIR, "mmCIF")
+_raw_mmcif = os.environ.get("MMCIF_SOURCE")
+_raw_rename = os.environ.get("MMCIF_RENAME")
+MMCIF_SOURCE_DIR = _abs(_raw_mmcif) if _raw_mmcif else os.path.join(DATA_DIR, "mmCIF")
+PDB_MMCIF_RENAME_DIR = (
+    _abs(_raw_rename) if _raw_rename else os.path.join(DATA_DIR, "mmCIF_rename")
 )
-_DEFAULT_MMCIF_RENAME = (
-    os.path.join(TEST_DIR, "mmcif_rename")
-    if IS_TEST
-    else os.path.join(DATA_DIR, "mmCIF_rename")
-)
-MMCIF_SOURCE_DIR = os.environ.get("MMCIF_SOURCE", _DEFAULT_MMCIF_SOURCE)
-PDB_MMCIF_RENAME_DIR = os.environ.get("MMCIF_RENAME", _DEFAULT_MMCIF_RENAME)
 
 
 def ensure_parent_dir(path):

@@ -2,6 +2,10 @@
 
 A computational pipeline for categorizing small-molecule enantiomer binding conformations.
 
+## Data
+
+Download the data from [Zenodo](https://doi.org/<replace-with-created-DOI>) and place it under `Data/`. Put your mmCIF files (`*.cif.gz`) in `Data/mmCIF/`.
+
 ## Badges
 
 (Customize these badges with your own links, and check https://shields.io/ or https://badgen.net/ to see which other badges are available.)
@@ -28,24 +32,16 @@ You need all of the following before running the pipeline. Creating the conda en
 | [Schrödinger](https://www.schrodinger.com/) | Commercial license. PrepWizard, `structconvert`, `structalign`. Set `SCHRODINGER` to your install root. |
 | [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) | Academic / non-commercial via the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de). Not shipped here. Place the unpacked tree at `Data_preprocess/unicon_1.5.0/` (`…/unicon` binary). Activate with `./unicon --license …`. |
 | [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) | Same NAOMI terms as UniCON. Not shipped here. Place the unpacked tree at `Alignment/LigandExtractor_1.0.1/` (`…/LigandExtractor` binary). Activate with `./LigandExtractor --license …`. |
-| PDB mmCIF input | Gzipped `*.cif.gz` in **`Data/mmCIF/`** (repository root). See below. |
+| PDB mmCIF input | Gzipped `*.cif.gz` in **`Data/mmCIF/`**. |
 | Network | RCSB / UniProt APIs during Data Preprocess (unless you skip those steps). |
 
-### Input data (mmCIF)
+Test data is under `Data/test/mmCIF/`. Run it with:
 
-Put your PDB mmCIF files in **`Data/mmCIF/`** (from the repository root). The files must be gzip-compressed **`.cif.gz`**.
-
-```
-Enantiomers_binding_conformation/
-└── Data/
-    └── mmCIF/                 # you create this and place *.cif.gz here
-        ├── 1abc.cif.gz
-        └── …
+```bash
+enantiomer-pipeline --mmcif-source Data/test/mmCIF all
 ```
 
-`Data/mmCIF_rename/` is written by the pipeline (decompressed `.cif`); you do not need to fill it. To use another archive location, set `MMCIF_SOURCE` (and optionally `MMCIF_RENAME`) or pass `--mmcif-source`. In test mode the default input is `test/mmcif/`.
-
-Stage-specific setup is in each stage README.
+Outputs are written under `Data/test/`.
 
 ## Overview
 
@@ -65,7 +61,7 @@ This project develops a computational pipeline to:
 | 3. Pharmacophore generation | [Pharmacophore_generation_after_alignment/](Pharmacophore_generation_after_alignment/) | [README.md](Pharmacophore_generation_after_alignment/README.md) |
 | 4. Categorization | [Categorization/](Categorization/) | [README.md](Categorization/README.md) |
 
-**Convention:** scripts live in stage directories; pipeline outputs live under [Data/](Data/). Set `PIPELINE_TEST=1` to write test outputs under [test/](test/) instead.
+**Convention:** scripts live in stage directories; pipeline outputs live under [Data/](Data/).
 
 The [enantiomer_pipeline](enantiomer_pipeline/) package provides a unified CLI and Python API that wraps the same `run_*.sh` drivers documented below.
 
@@ -81,8 +77,7 @@ Enantiomers_binding_conformation/
 ├── requirements.txt
 ├── enantiomer_pipeline/          # Unified Python package (CLI + API)
 ├── src/enantiomer_binding_conformation/
-├── Data/                         # Production pipeline outputs
-├── test/                         # Test sample + test outputs (PIPELINE_TEST=1)
+├── Data/                         # Pipeline inputs and outputs
 ├── Data_preprocess/              # Stage 1 scripts
 ├── Alignment/                    # Stage 2 scripts
 ├── Pharmacophore_generation_after_alignment/   # Stage 3 scripts
@@ -115,7 +110,7 @@ The env is Python 3.13 and includes the Python packages used by every stage. The
 Run one stage or the full workflow:
 
 ```bash
-# Single stage (production)
+# Single stage
 enantiomer-pipeline preprocess
 enantiomer-pipeline alignment
 enantiomer-pipeline pharmacophore
@@ -124,24 +119,20 @@ enantiomer-pipeline categorization
 # Full pipeline (stops on first failure)
 enantiomer-pipeline all
 
-# Test mode (uses test/run_*_test.sh and test/ outputs)
-enantiomer-pipeline --test all
-
 # Pass flags through to the underlying bash driver (note the -- separator)
-enantiomer-pipeline --test preprocess -- --skip-uniprot --skip-prepwizard
-enantiomer-pipeline --test alignment -- --skip-structalign
-enantiomer-pipeline --test pharmacophore -- --skip-generation
-enantiomer-pipeline --test categorization
+enantiomer-pipeline preprocess -- --skip-uniprot --skip-prepwizard
+enantiomer-pipeline alignment -- --skip-structalign
+enantiomer-pipeline pharmacophore -- --skip-generation
+enantiomer-pipeline categorization
 ```
 
 Common options:
 
 | Flag                  | Purpose                                                      |
 | --------------------- | ------------------------------------------------------------ |
-| `--test`              | Use `test/run_*_test.sh` drivers and write under `test/`     |
 | `--project-root PATH` | Repository root (default: auto-detect from install location) |
 | `--schrodinger PATH`  | Set `SCHRODINGER` for stages that need Schrödinger           |
-| `--mmcif-source PATH` | Set `MMCIF_SOURCE` for preprocess (default: `Data/mmCIF`)    |
+| `--mmcif-source PATH` | Set `MMCIF_SOURCE` for preprocess (default: `Data/mmCIF`) |
 | `--python-cmd PATH`   | Set `PYTHON_CMD` for subprocess Python scripts               |
 | `--json`              | Print structured result summary (metrics + output paths)     |
 | `--continue-on-error` | With `all`, keep running after a failed stage                |
@@ -154,7 +145,6 @@ Each stage prints a result summary when it finishes (file counts, category break
 from enantiomer_pipeline import PipelineConfig, run_stage, run_all
 
 config = PipelineConfig(
-    test_mode=True,
     schrodinger="/path/to/your/schrodinger",
 )
 
@@ -167,7 +157,7 @@ print(result.result["text"])
 results = run_all(config, stop_on_error=True)
 ```
 
-`PipelineConfig.data_dir` resolves to `Data/` (production) or `test/` (when `test_mode=True`). Stage drivers are selected automatically from `run_*.sh` or `test/run_*_test.sh`.
+`PipelineConfig.data_dir` is `Data/`. Stage drivers are the shared `run_*.sh` scripts.
 
 ## Credits
 

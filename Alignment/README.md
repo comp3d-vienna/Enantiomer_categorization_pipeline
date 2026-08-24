@@ -4,18 +4,19 @@ Group paired enantiomers on the same UniProt ID, align those chains, and extract
 
 Only groups with both `m0` and `m1` are aligned. Single-enantiomer groups are listed but not processed further.
 
-Scripts are in this folder. Outputs go under `../Data/Alignment/` (or `../test/Alignment/` when `PIPELINE_TEST=1`). Paths: [`paths.py`](paths.py).
+Scripts are in this folder. Outputs go under `../Data/Alignment/`. Paths: [`paths.py`](paths.py).
 
 Needs [Data Preprocess](../Data_preprocess/README.md) through step 1.4.
 
 ## Run
+
+From the repository root:
 
 ```bash
 export SCHRODINGER=/path/to/your/schrodinger
 bash run_alignment.sh
 ```
 
-Test: `bash ../test/run_alignment_test.sh`  
 Skip Schrödinger: `--skip-mae-convert --skip-structalign`  
 Skip ligand extract: `--skip-ligand-extract`
 
@@ -33,7 +34,7 @@ Groups are `(UniProt, InChI-before-/m)` hashed to 10 hex chars, with a stable `g
 
 Existing prep PDBs, parsed chains, and ligand SDFs are skipped. Delete `Data/Alignment/` for a full redo. Step 2.3 re-runs `structalign`.
 
-## Outputs (`Data/Alignment/` or `test/Alignment/`)
+## Outputs (`Data/Alignment/`)
 
 ```
 paired_enantiomers/                          # 2.1 CSVs

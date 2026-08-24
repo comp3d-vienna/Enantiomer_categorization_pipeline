@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run Categorization (step 4) on production data under Data/.
+# Run Categorization (step 4).
 #
 # 4a whole_process.py (closest-pair RMSD) + 4b export_feature_table.py (SILIRID).
 # Both write Data/Categorization/feature_table.csv.
@@ -10,11 +10,15 @@ fi
 
 set -euo pipefail
 
-unset PIPELINE_TEST
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="${SCRIPT_DIR}/Data"
 CATEGORIZATION_DIR="${SCRIPT_DIR}/Categorization"
+PROJECT_ROOT="${SCRIPT_DIR}"
+
+unset PIPELINE_TEST
+# shellcheck source=Data_preprocess/data_root.sh
+source "${PROJECT_ROOT}/Data_preprocess/data_root.sh"
+DATA_DIR="$(select_pipeline_data_dir)"
+export PIPELINE_DATA_DIR="$DATA_DIR"
 
 if [[ -n "${PYTHON_CMD:-}" ]]; then
     PYTHON="$PYTHON_CMD"
@@ -82,11 +86,11 @@ require_pharmacophore_inputs() {
     local missing=0
     if [[ ! -d "${DATA_DIR}/Pharmacophore/paired_enantiomers_pocket_based" ]] \
         || [[ -z "$(find "${DATA_DIR}/Pharmacophore/paired_enantiomers_pocket_based" -name '*.csv' -print -quit 2>/dev/null)" ]]; then
-        echo "Missing: Data/Pharmacophore/paired_enantiomers_pocket_based/*.csv (step 3.2)"
+        echo "Missing: ${DATA_DIR}/Pharmacophore/paired_enantiomers_pocket_based/*.csv (step 3.2)"
         missing=1
     fi
     if [[ ! -d "${DATA_DIR}/Pharmacophore/Enantiomer_aligned_structure_ligandextract_canonical" ]]; then
-        echo "Missing: Data/Pharmacophore/Enantiomer_aligned_structure_ligandextract_canonical/"
+        echo "Missing: ${DATA_DIR}/Pharmacophore/Enantiomer_aligned_structure_ligandextract_canonical/"
         missing=1
     fi
     if [[ "$missing" -eq 1 ]]; then
@@ -96,7 +100,7 @@ require_pharmacophore_inputs() {
     fi
 }
 
-echo "Production categorization pipeline"
+echo "Categorization pipeline"
 echo "Data directory: ${DATA_DIR}"
 
 check_python_deps
