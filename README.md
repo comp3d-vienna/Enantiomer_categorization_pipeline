@@ -89,18 +89,14 @@ Enantiomers_binding_conformation/
 
 ## Installation
 
-This pipeline is distributed from GitHub, not PyPI. Obtain Schrödinger, UniCON, and LigandExtractor yourself ([Prerequisites](#prerequisites)).
-
 ```bash
 git clone git@github.com:Huanni05/enantiomer_binding_conformation.git
 cd enantiomer_binding_conformation
 
-conda env create -f environment.yml   # skip if the env already exists
+conda env create -f environment.yml
 conda activate categorize_pipeline
 python -m pip install -e .
 ```
-
-The env is Python 3.13 and includes the Python packages used by every stage. The editable install registers the `enantiomer-pipeline` command and the `enantiomer_pipeline` module (see [Package usage](#package-usage)).
 
 ---
 
@@ -124,7 +120,6 @@ enantiomer-pipeline all
 enantiomer-pipeline preprocess -- --skip-uniprot --skip-prepwizard
 enantiomer-pipeline alignment -- --skip-structalign
 enantiomer-pipeline pharmacophore -- --skip-generation
-enantiomer-pipeline categorization
 ```
 
 Common options:
