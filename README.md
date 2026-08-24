@@ -160,6 +160,10 @@ run_stage(config, "preprocess", extra_args=["--skip-uniprot", "--skip-prepwizard
 
 This project is licensed under the [MIT License](LICENSE). Copyright (c) 2026 Huanni Zhang.
 
+## Citation
+
+
+
 ## Credits
 
 This package was created with [Copier](https://github.com/copier-org/copier) and the [NLeSC/python-template](https://github.com/NLeSC/python-template).
