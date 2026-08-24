@@ -1,4 +1,4 @@
-# enantiomer_binding_conformation
+# Enantiomer_categorization_pipeline
 
 A computational pipeline for categorizing small-molecule enantiomer binding conformations.
 
