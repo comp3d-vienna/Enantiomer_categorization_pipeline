@@ -72,6 +72,7 @@ The [enantiomer_pipeline](enantiomer_pipeline/) package provides a unified CLI a
 ```
 Enantiomers_binding_conformation/
 ├── README.md
+├── LICENSE                       # MIT
 ├── pyproject.toml
 ├── environment.yml               # Python 3.13 conda env
 ├── requirements.txt
@@ -141,23 +142,28 @@ Each stage prints a result summary when it finishes (file counts, category break
 
 ### Python API
 
+Run from the repository root after `pip install -e .`. Set `SCHRODINGER` in the environment, or pass `schrodinger="..."` to `PipelineConfig`. Stages run in order: `preprocess`, `alignment`, `pharmacophore`, `categorization`. Outputs are written under `Data/` (or `Data/test/` for the test mmCIF).
+
 ```python
 from enantiomer_pipeline import PipelineConfig, run_stage, run_all
 
-config = PipelineConfig(
-    schrodinger="/path/to/your/schrodinger",
-)
+# Test mmCIF (outputs under Data/test/). For Data/mmCIF omit mmcif_source.
+config = PipelineConfig(mmcif_source="Data/test/mmCIF")
 
-# Run one stage
-result = run_stage(config, "categorization")
-print(result.ok, result.returncode)
-print(result.result["text"])
+run_all(config, stop_on_error=True)
 
-# Run all stages in order
-results = run_all(config, stop_on_error=True)
+# One stage (previous stages must already have finished)
+run_stage(config, "preprocess")
+
+# Same skip flags as the bash drivers
+run_stage(config, "preprocess", extra_args=["--skip-uniprot", "--skip-prepwizard"])
 ```
 
-`PipelineConfig.data_dir` is `Data/`. Stage drivers are the shared `run_*.sh` scripts.
+`PipelineConfig` options match the CLI: `mmcif_source`, `schrodinger`, `python_cmd`, `project_root`. The API calls the same `run_*.sh` drivers.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). Copyright (c) 2026 Huanni Zhang.
 
 ## Credits
 
