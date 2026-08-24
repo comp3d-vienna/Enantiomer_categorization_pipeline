@@ -20,26 +20,16 @@ A computational pipeline for categorizing small-molecule enantiomer binding conf
 
 ## Prerequisites
 
-**Python environment** — use one **Python 3.13** conda env for all Python pipeline steps:
+You need all of the following before running the pipeline. Creating the conda env is in [Installation](#installation).
 
-```bash
-conda activate categorize_pipeline
-python -m pip install -e .
-```
-
-`categorize_pipeline` includes CDPL (required for pharmacophore step 3.1), RDKit, pandas, and BioPython. The editable install from this clone also registers the `enantiomer-pipeline` CLI (see [Package usage](#package-usage)).
-
-### Licensed third-party software
-
-These tools are **not** part of this repository’s license and are **not** available from PyPI. You need your own install and a license that covers your use.
-
-| Software | License / availability | Expected location |
-| -------- | ---------------------- | ----------------- |
-| [Schrödinger](https://www.schrodinger.com/) (PrepWizard, `structconvert`, `structalign`) | Commercial Schrödinger license | Set `SCHRODINGER` to your install root |
-| [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) | Academic / non-commercial via the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de); evaluation license for non-academic users | Place the unpacked tree at `Data_preprocess/unicon_1.5.0/` so the binary is `Data_preprocess/unicon_1.5.0/unicon` |
-| [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) | Same NAOMI ChemBio Suite terms as UniCON | Place the unpacked tree at `Alignment/LigandExtractor_1.0.1/` so the binary is `Alignment/LigandExtractor_1.0.1/LigandExtractor` |
-
-These two tools are **not shipped** in this repository. Download them from [Universität Hamburg ZBH](https://software.zbh.uni-hamburg.de) after registration, then put the folders under `Data_preprocess/` and `Alignment/` as above. Activate each binary with your NAOMI license (`./unicon --license …` and `./LigandExtractor --license …`).
+| What | Detail |
+| ---- | ------ |
+| Python 3.13 conda env `categorize_pipeline` | From `environment.yml`. Provides RDKit, BioPython, pandas, CDPKit (CDPL), and the other Python packages. |
+| [Schrödinger](https://www.schrodinger.com/) | Commercial license. PrepWizard, `structconvert`, `structalign`. Set `SCHRODINGER` to your install root. |
+| [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/software/unicon.html) | Academic / non-commercial via the [NAOMI ChemBio Suite](https://software.zbh.uni-hamburg.de). Not shipped here. Place the unpacked tree at `Data_preprocess/unicon_1.5.0/` (`…/unicon` binary). Activate with `./unicon --license …`. |
+| [LigandExtractor](https://www.zbh.uni-hamburg.de/forschung/amd/software/ligandextractor.html) | Same NAOMI terms as UniCON. Not shipped here. Place the unpacked tree at `Alignment/LigandExtractor_1.0.1/` (`…/LigandExtractor` binary). Activate with `./LigandExtractor --license …`. |
+| PDB mmCIF input | Gzipped `*.cif.gz` in **`Data/mmCIF/`** (repository root). See below. |
+| Network | RCSB / UniProt APIs during Data Preprocess (unless you skip those steps). |
 
 ### Input data (mmCIF)
 
@@ -55,17 +45,7 @@ Enantiomers_binding_conformation/
 
 `Data/mmCIF_rename/` is written by the pipeline (decompressed `.cif`); you do not need to fill it. To use another archive location, set `MMCIF_SOURCE` (and optionally `MMCIF_RENAME`) or pass `--mmcif-source`. In test mode the default input is `test/mmcif/`.
 
-### Other dependencies
-
-| Dependency | Stages |
-| ---------- | ------ |
-| RDKit, Python 3.13, `pandas`, `pytz`, `requests`, `tqdm` | Data Preprocess, Pharmacophore, Categorization |
-| BioPython | Alignment |
-| CDPL / CDPKit (pip, in `categorize_pipeline`) | Pharmacophore step 3.1 |
-| PDB mmCIF (`Data/mmCIF/*.cif.gz`) | Data Preprocess |
-| Network (RCSB, UniProt APIs) | Data Preprocess |
-
-Stage-specific setup and paths are in each stage README.
+Stage-specific setup is in each stage README.
 
 ## Overview
 
@@ -74,7 +54,7 @@ This project develops a computational pipeline to:
 1. Retrieve protein structures from the PDB that contain enantiomer pairs.
 2. Filter and annotate those structures with ligand and target information.
 3. Align paired enantiomer complexes on the same protein (UniProt ID).
-4. Use evaluation metrics to automatically categorize enantiomer binding modes.
+4. Exploration of interpretable features to characterize enantiomer binding modes.
 
 ## Pipeline stages
 
@@ -113,9 +93,7 @@ Enantiomers_binding_conformation/
 
 ## Installation
 
-This pipeline is distributed from GitHub, not PyPI. Several stages need licensed third-party software that you must obtain yourself (see [Prerequisites](#prerequisites)).
-
-Use one **Python 3.13** conda env (`categorize_pipeline`) for all Python pipeline steps.
+This pipeline is distributed from GitHub, not PyPI. Obtain Schrödinger, UniCON, and LigandExtractor yourself ([Prerequisites](#prerequisites)).
 
 ```bash
 git clone git@github.com:Huanni05/enantiomer_binding_conformation.git
@@ -126,7 +104,7 @@ conda activate categorize_pipeline
 python -m pip install -e .
 ```
 
-This registers the `enantiomer-pipeline` command and the importable `enantiomer_pipeline` module from the clone. CDPKit (CDPL), RDKit, pandas, and BioPython are installed in the env.
+The env is Python 3.13 and includes the Python packages used by every stage. The editable install registers the `enantiomer-pipeline` command and the `enantiomer_pipeline` module (see [Package usage](#package-usage)).
 
 ---
 
@@ -147,18 +125,13 @@ enantiomer-pipeline categorization
 enantiomer-pipeline all
 
 # Test mode (uses test/run_*_test.sh and test/ outputs)
-enantiomer-pipeline --test categorization
+enantiomer-pipeline --test all
 
 # Pass flags through to the underlying bash driver (note the -- separator)
 enantiomer-pipeline --test preprocess -- --skip-uniprot --skip-prepwizard
 enantiomer-pipeline --test alignment -- --skip-structalign
 enantiomer-pipeline --test pharmacophore -- --skip-generation
-```
-
-The same commands work if you call the package with Python. Put the same stage and flags after `python -m enantiomer_pipeline`:
-
-```bash
-python -m enantiomer_pipeline …
+enantiomer-pipeline --test categorization
 ```
 
 Common options:

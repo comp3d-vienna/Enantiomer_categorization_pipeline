@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from collections import Counter
 from pathlib import Path
 from typing import Any, Optional
 
@@ -246,38 +245,37 @@ def _pharmacophore_result(config: PipelineConfig) -> dict[str, Any]:
 
 def _categorization_result(config: PipelineConfig) -> dict[str, Any]:
     cat_dir = config.stage_dir("Categorization")
-    categories_csv = cat_dir / "complex_categories.csv"
+    feature_csv = cat_dir / "feature_table.csv"
 
-    checks = [("categories_csv", categories_csv.is_file())]
+    checks = [
+        ("feature_table", feature_csv.is_file()),
+    ]
     status = _status_from_checks(checks)
 
-    category_counts: dict[str, int] = {}
     total_groups = 0
-    if categories_csv.is_file():
+    n_with_rmsd = 0
+    if feature_csv.is_file():
         try:
             import pandas as pd
 
-            df = pd.read_csv(categories_csv)
+            df = pd.read_csv(feature_csv)
             total_groups = len(df)
-            counts = Counter(df["category"].astype(str).str.strip())
-            category_counts = dict(sorted(counts.items(), key=lambda x: str(x[0])))
-        except Exception as exc:
-            category_counts = {"error": str(exc)}
+            if "closest_cross_tag_rmsd_A" in df.columns:
+                n_with_rmsd = int(df["closest_cross_tag_rmsd_A"].notna().sum())
+        except Exception:
+            n_with_rmsd = 0
 
     metrics = {
         "total_groups": total_groups,
-        "category_counts": category_counts,
+        "groups_with_rmsd": n_with_rmsd,
     }
 
     lines = [
         f"Data directory: {cat_dir}",
         f"Status: {status}",
-        f"Total groups categorized: {total_groups}",
+        f"Feature groups: {total_groups}",
+        f"Groups with RMSD: {n_with_rmsd}",
     ]
-    if category_counts:
-        lines.append("Category distribution:")
-        for label, count in category_counts.items():
-            lines.append(f"  {label}: {count}")
 
     return {
         "stage": "categorization",
@@ -285,7 +283,9 @@ def _categorization_result(config: PipelineConfig) -> dict[str, Any]:
         "status": status,
         "data_dir": str(cat_dir),
         "metrics": metrics,
-        "output_paths": {"categories_csv": str(categories_csv)},
+        "output_paths": {
+            "feature_table": str(feature_csv),
+        },
         "text": "\n".join(lines),
     }
 

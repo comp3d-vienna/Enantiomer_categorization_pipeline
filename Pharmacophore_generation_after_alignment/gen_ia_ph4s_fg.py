@@ -200,6 +200,11 @@ def parseArgs() -> argparse.Namespace:
 def main() -> None:
     args = parseArgs()
 
+    if not os.path.isfile(args.ligands_file):
+        sys.exit(f'Error: ligand file not found or not a file: {args.ligands_file}')
+    if os.path.getsize(args.ligands_file) == 0:
+        sys.exit(f'Error: ligand file is empty: {args.ligands_file}')
+
     # read and preprocess the receptor structure
     rec_mol = readAndPrepareReceptorStructure(args)
 

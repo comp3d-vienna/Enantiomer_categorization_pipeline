@@ -13,12 +13,24 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="${SCRIPT_DIR}/Data"
 PHARMACOPHORE_DIR="${SCRIPT_DIR}/Pharmacophore_generation_after_alignment"
 ALIGNMENT_DIR="${DATA_DIR}/Alignment"
-RESOLVE_PYTHON="${PHARMACOPHORE_DIR}/resolve_python.sh"
+
+if [[ -n "${PYTHON_CMD:-}" ]]; then
+    PYTHON="$PYTHON_CMD"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+    PYTHON=python
+else
+    echo "Error: python3 or python not found in PATH." >&2
+    echo "Activate your Python 3.13 env or set PYTHON_CMD, e.g.:" >&2
+    echo "  conda activate categorize_pipeline" >&2
+    echo "  export PYTHON_CMD=\$(which python)" >&2
+    exit 1
+fi
+export PYTHON
+export PYTHON_CMD="${PYTHON_CMD:-$PYTHON}"
 
 SKIP_GENERATION=0
-
-# shellcheck source=Pharmacophore_generation_after_alignment/resolve_python.sh
-source "$RESOLVE_PYTHON"
 
 usage() {
     cat <<EOF
@@ -40,8 +52,7 @@ Options:
   -h, --help          Show this help message
 
 Environment:
-  PYTHON_CMD          Python 3.13 for all pipeline steps (default: active env)
-  PIPELINE_CONDA_ENV  Conda env name fallback (default: categorize_pipeline)
+  PYTHON_CMD          Python executable (default: python3, then python)
 
 Examples:
   conda activate categorize_pipeline
@@ -104,9 +115,7 @@ echo "Production pharmacophore pipeline"
 echo "Data directory: ${DATA_DIR}"
 
 require_alignment_inputs
-resolve_python
-echo "Python: $PIPELINE_PYTHON"
-echo "PYTHONPATH (CDPL): ${PYTHONPATH:-<not set>}"
+echo "Python: $PYTHON"
 
 if [[ "$SKIP_GENERATION" -eq 0 ]]; then
     step "Step 3.1: Interaction pharmacophore generation"
@@ -116,7 +125,7 @@ else
 fi
 
 step "Step 3.2: Process interaction data (paired enantiomers)"
-"$PIPELINE_PYTHON" "${PHARMACOPHORE_DIR}/process_interaction_data.py"
+"$PYTHON" "${PHARMACOPHORE_DIR}/process_interaction_data.py"
 
 step "Pharmacophore pipeline finished"
 echo "Outputs are under: ${DATA_DIR}/Pharmacophore/"

@@ -4,20 +4,12 @@ Build interaction pharmacophores from aligned paired complexes and write one fea
 
 Needs [Alignment](../Alignment/README.md) through step 2.4.
 
-Use one **Python 3.13** env with CDPL, pandas, and pytz (recommended: `categorize_pipeline`). Resolver: [`resolve_python.sh`](resolve_python.sh). Paths: [`paths.py`](paths.py).
+Use one **Python 3.13** env with CDPL, pandas, and pytz (recommended: `categorize_pipeline`). Paths: [`paths.py`](paths.py).
 
 ## Run
 
 ```bash
 conda activate categorize_pipeline
-bash run_pharmacophore.sh
-```
-
-If CDPL is not on that env’s path:
-
-```bash
-export PYTHONPATH=/data/shared/software/CDPKit-head-RH9/Python
-export PYTHON_CMD=$(conda run -n categorize_pipeline which python)
 bash run_pharmacophore.sh
 ```
 

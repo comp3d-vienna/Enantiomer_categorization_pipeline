@@ -30,19 +30,23 @@ TIME_OUT_FILE="${PHARMACOPHORE_DIR}/generation_timeout.txt"
 
 GEN_SCRIPT="${SCRIPT_DIR}/gen_ia_ph4s_fg.py"
 CANON_SCRIPT="${SCRIPT_DIR}/canon_mols_1.py"
-RESOLVE_PYTHON="${SCRIPT_DIR}/resolve_python.sh"
 WATER_RESIDUES="HOH"
 TIMEOUT_SEC=90
 
-# Step 3.1 uses the same Python 3.13 env as step 3.2 (CDPL + pandas).
-# shellcheck source=resolve_python.sh
-source "$RESOLVE_PYTHON"
-if [[ -z "${PIPELINE_PYTHON:-}" ]]; then
-    resolve_python
+if [[ -n "${PYTHON_CMD:-}" ]]; then
+    PYTHON="$PYTHON_CMD"
+elif [[ -n "${PYTHON:-}" ]] && command -v "$PYTHON" >/dev/null 2>&1; then
+    :
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+    PYTHON=python
+else
+    echo "Error: python3 or python not found in PATH." >&2
+    echo "Activate categorize_pipeline or set PYTHON_CMD." >&2
+    exit 1
 fi
-PYTHON="$PIPELINE_PYTHON"
 echo "Step 3.1 Python: $PYTHON"
-echo "PYTHONPATH (CDPL): ${PYTHONPATH:-<not set>}"
 
 parse_complex_pdb_chain() {
     local fname="$1"
@@ -175,16 +179,22 @@ while IFS= read -r line; do
         continue
     fi
 
-    ligand_file=""
-    if [[ -f "${CANONICAL_SDF_DIR}/${line}_canon.sdf" ]]; then
-        ligand_file="${CANONICAL_SDF_DIR}/${line}_canon.sdf"
-    else
+    ligand_file="${CANONICAL_SDF_DIR}/${line}_canon.sdf"
+    if [[ ! -f "$ligand_file" ]]; then
+        shopt -s nullglob
         matches=( "${CANONICAL_SDF_DIR}/${line}"*.sdf )
-        if [[ ${#matches[@]} -eq 0 ]]; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') Ligand not found for $line" | tee -a "$FAILED_JOBS_FILE"
+        shopt -u nullglob
+        if [[ ${#matches[@]} -eq 0 || ! -f "${matches[0]}" ]]; then
+            echo "$(date '+%Y-%m-%d %H:%M:%S') Ligand SDF not found for $line (expected $ligand_file)" \
+                | tee -a "$FAILED_JOBS_FILE"
             continue
         fi
         ligand_file="${matches[0]}"
+    fi
+    if [[ ! -s "$ligand_file" ]]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') Empty ligand SDF for $line: $ligand_file" \
+            | tee -a "$FAILED_JOBS_FILE"
+        continue
     fi
 
     ligand_basename=$(basename "$ligand_file" .sdf)

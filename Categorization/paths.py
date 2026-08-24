@@ -21,13 +21,10 @@ _pspec.loader.exec_module(pharmacophore_paths)
 BASE_DIR = preprocess_paths.BASE_DIR
 
 CATEGORIZATION_RESULTS_DIR = os.path.join(BASE_DIR, "Categorization")
-CATEGORIES_CSV = os.path.join(CATEGORIZATION_RESULTS_DIR, "complex_categories.csv")
+FEATURE_TABLE_CSV = os.path.join(CATEGORIZATION_RESULTS_DIR, "feature_table.csv")
 
 INTERACTION_TYPE_INFO_DIR = pharmacophore_paths.PAIRED_FEATURE_OUTPUT_DIR
 CANONICAL_LIGAND_DIR = pharmacophore_paths.CANONICAL_LIGAND_DIR
 
-# Manual curation spreadsheets (one CSV per category; filename encodes the label)
+# Manual curation spreadsheets (analysis only; not used by the pipeline)
 MANUAL_CURATION_DIR = os.path.join(preprocess_paths.DATA_DIR, "Manual_curation")
-
-# Training labels (manualcheck_invalid excluded)
-THRESHOLD_TUNING_MANUAL_LABELS = ("1.1", "1.2", "1.3", "2")

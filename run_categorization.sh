@@ -1,7 +1,8 @@
 #!/bin/bash
 # Run Categorization (step 4) on production data under Data/.
 #
-# Default: 4a whole_process + 4b export training table + 4c custom RMSD thresholds.
+# 4a whole_process.py (closest-pair RMSD) + 4b export_feature_table.py (SILIRID).
+# Both write Data/Categorization/feature_table.csv.
 
 if [ -z "${BASH_VERSION:-}" ]; then
     exec /bin/bash "$0" "$@"
@@ -14,7 +15,6 @@ unset PIPELINE_TEST
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="${SCRIPT_DIR}/Data"
 CATEGORIZATION_DIR="${SCRIPT_DIR}/Categorization"
-MANUAL_CURATION_DIR="${DATA_DIR}/Manual_curation"
 
 if [[ -n "${PYTHON_CMD:-}" ]]; then
     PYTHON="$PYTHON_CMD"
@@ -27,46 +27,35 @@ else
     exit 1
 fi
 
-FEATURES_ONLY=0
-
 usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Run binding-mode categorization for paired enantiomer groups (step 4).
+Compute closest-pair RMSD and SILIRID features for paired enantiomer groups (step 4).
 
-Steps (default: all):
-  4a  whole_process.py              Manual training/invalid + closest-pair RMSD
-  4b  export_threshold_training_table.py   RMSD + SILIRID similarity
-  4c  train_category_thresholds.py  custom RMSD bins: purity and recall
+Steps:
+  4a  whole_process.py         Closest-pair RMSD → feature_table.csv
+  4b  export_feature_table.py  Add SILIRID similarity and fingerprints to that table
 
 Prerequisite: complete Pharmacophore generation (steps 3.1-3.2), especially:
   Data/Pharmacophore/paired_enantiomers_pocket_based/
   Data/Pharmacophore/Enantiomer_aligned_structure_ligandextract_canonical/
 
-For step 4b-4c, manual labels under Data/Manual_curation/ are expected.
-
 Delete Data/Categorization/ yourself if you need a full redo.
 
 Options:
-  --features-only   Run 4a only (skip export + custom RMSD scoring)
-  -h, --help        Show this help message
+  -h, --help  Show this help message
 
 Environment:
   PYTHON_CMD  Python executable (default: python3, then python)
 
 Examples:
   bash run_categorization.sh
-  bash run_categorization.sh --features-only
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --features-only)
-            FEATURES_ONLY=1
-            shift
-            ;;
         -h|--help)
             usage
             exit 0
@@ -91,8 +80,9 @@ check_python_deps() {
 
 require_pharmacophore_inputs() {
     local missing=0
-    if [[ ! -d "${DATA_DIR}/Pharmacophore/paired_enantiomers_pocket_based" ]]; then
-        echo "Missing: Data/Pharmacophore/paired_enantiomers_pocket_based/"
+    if [[ ! -d "${DATA_DIR}/Pharmacophore/paired_enantiomers_pocket_based" ]] \
+        || [[ -z "$(find "${DATA_DIR}/Pharmacophore/paired_enantiomers_pocket_based" -name '*.csv' -print -quit 2>/dev/null)" ]]; then
+        echo "Missing: Data/Pharmacophore/paired_enantiomers_pocket_based/*.csv (step 3.2)"
         missing=1
     fi
     if [[ ! -d "${DATA_DIR}/Pharmacophore/Enantiomer_aligned_structure_ligandextract_canonical" ]]; then
@@ -112,35 +102,16 @@ echo "Data directory: ${DATA_DIR}"
 check_python_deps
 require_pharmacophore_inputs
 
-if [[ ! -d "${MANUAL_CURATION_DIR}" ]]; then
-    echo "Error: ${MANUAL_CURATION_DIR} not found — manual curation is required for categorization." >&2
-    exit 1
-fi
-
 echo ""
-echo "=== Step 4a: Manual training/invalid + closest-pair RMSD ==="
+echo "=== Step 4a: Closest-pair RMSD ==="
 "$PYTHON" "${CATEGORIZATION_DIR}/whole_process.py"
 
-if [[ "$FEATURES_ONLY" -eq 1 ]]; then
-    echo ""
-    echo "Categorization finished (features only; skipped 4b-4c)"
-    echo "Outputs: ${DATA_DIR}/Categorization/"
-    exit 0
-fi
-
 echo ""
-echo "=== Step 4b: Export threshold training table (RMSD + SILIRID) ==="
-"$PYTHON" "${CATEGORIZATION_DIR}/export_threshold_training_table.py"
-
-echo ""
-echo "=== Step 4c: Custom RMSD thresholds (purity and recall) ==="
-"$PYTHON" "${CATEGORIZATION_DIR}/train_category_thresholds.py"
+echo "=== Step 4b: Add SILIRID similarity and fingerprints ==="
+"$PYTHON" "${CATEGORIZATION_DIR}/export_feature_table.py"
 
 echo ""
 echo "Categorization finished"
 echo "Outputs: ${DATA_DIR}/Categorization/"
-echo "  complex_categories.csv"
-echo "  threshold_training_table.csv"
+echo "  feature_table.csv"
 echo "  silirid_fingerprint_slots.csv"
-echo "  custom_rmsd_thresholds.csv"
-echo "  custom_rmsd_threshold_report.txt"

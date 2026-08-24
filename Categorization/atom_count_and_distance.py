@@ -110,14 +110,11 @@ def categorize_complex_by_atom_counts(
     n_missing_or_unreadable = sum(1 for c in atom_counts if c is None)
     present_counts = sorted({c for c in atom_counts if c is not None})
 
-    is_consistent = (n_files > 0) and (n_missing_or_unreadable == 0) and (len(present_counts) == 1)
-    category = 1 if is_consistent else 2
     n_m0, n_m1 = enantiomer_tag_counts(files)
     details = _build_atom_count_entry_details(files, atom_counts)
 
     return {
         "info_file": info_csv_path.name,
-        "category": category,
         "n_structures": n_files,
         "n_m0_structures": n_m0,
         "n_m1_structures": n_m1,
@@ -276,13 +273,37 @@ def closest_cross_tag_pair_per_complex(dist_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _finalize_and_write_categories(
-    category_rows: list[dict[str, object]],
+def _finalize_and_write_feature_table(
+    group_rows: list[dict[str, object]],
     all_distance_tables: list[pd.DataFrame],
     all_errors: list[dict[str, object]],
     out_dir: Path,
 ) -> None:
-    categories_df = pd.DataFrame(category_rows).sort_values(["category", "info_file"])
+    from export_feature_table import FEATURE_TABLE_COLUMNS
+
+    feature_csv = out_dir / "feature_table.csv"
+    for leftover in ("complex_categories.csv", "feature_table_missing_manual_label.csv"):
+        legacy = out_dir / leftover
+        if legacy.is_file():
+            legacy.unlink()
+
+    drop_cols = (
+        "category",
+        "pipeline_category",
+        "manual_label",
+        "manual_label_join_method",
+        "category_reason",
+    )
+
+    if not group_rows:
+        pd.DataFrame(columns=list(FEATURE_TABLE_COLUMNS)).to_csv(feature_csv, index=False)
+        return
+
+    categories_df = pd.DataFrame(group_rows).drop(columns=list(drop_cols), errors="ignore")
+    if "info_file" in categories_df.columns:
+        categories_df = categories_df.sort_values("info_file")
+    sort_by = ["info_file"] if "info_file" in categories_df.columns else []
+
     closest_df = (
         closest_cross_tag_pair_per_complex(pd.concat(all_distance_tables, ignore_index=True))
         if all_distance_tables
@@ -293,7 +314,6 @@ def _finalize_and_write_categories(
         pd.DataFrame(all_errors).to_csv(out_dir / "atom_distance_errors.csv", index=False)
 
     categories_updated = categories_df.copy()
-    categories_updated["category"] = categories_updated["category"].astype(str)
     categories_updated["closest_cross_tag_file_a"] = ""
     categories_updated["closest_cross_tag_file_b"] = ""
     categories_updated["closest_cross_tag_rmsd_A"] = float("nan")
@@ -318,75 +338,58 @@ def _finalize_and_write_categories(
                 categories_updated[col].astype(str).replace("nan", "")
             )
 
-    categories_updated = categories_updated.sort_values(["category", "info_file"])
-    categories_updated.to_csv(out_dir / "complex_categories.csv", index=False)
+    ordered = [c for c in FEATURE_TABLE_COLUMNS if c in categories_updated.columns]
+    extra = [c for c in categories_updated.columns if c not in ordered]
+    categories_updated = categories_updated[ordered + extra]
+    if sort_by:
+        categories_updated = categories_updated.sort_values(sort_by)
+    categories_updated.to_csv(feature_csv, index=False)
 
 
-def process_manual_curation_categories(
+def write_closest_pair_rmsd_table(
     info_dir: str | Path,
     ligand_structures_dir: str | Path,
-    manual_dir: str | Path,
     *,
     out_dir: str | Path,
     csv_suffix: str = ".csv",
     file_column: str = "file",
 ) -> None:
-    """Build ``complex_categories.csv``: invalid vs training, plus closest-pair RMSD."""
-    from export_threshold_training_table import (
-        group_key_from_info_file,
-        load_manual_labels_from_curation_dir,
-    )
-
+    """Build ``feature_table.csv``: one row per group with closest-pair RMSD."""
     info_dir = Path(info_dir)
-    manual_dir = Path(manual_dir)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    _, by_subtype, by_invalid = load_manual_labels_from_curation_dir(manual_dir)
-    invalid_only = {k for k in by_invalid if k not in by_subtype}
-
-    category_rows: list[dict[str, object]] = []
+    group_rows: list[dict[str, object]] = []
     all_distance_tables: list[pd.DataFrame] = []
     all_errors: list[dict[str, object]] = []
 
-    for info_csv in sorted(info_dir.iterdir()):
-        if not info_csv.name.endswith(csv_suffix):
-            continue
+    if not info_dir.is_dir():
+        raise FileNotFoundError(f"info_dir not found: {info_dir}")
 
-        info_file = info_csv.name
-        group_key = group_key_from_info_file(info_file)
+    info_csvs = sorted(
+        path for path in info_dir.iterdir() if path.name.endswith(csv_suffix)
+    )
+    if not info_csvs:
+        raise FileNotFoundError(
+            f"No {csv_suffix} files in {info_dir}. "
+            "Finish pharmacophore step 3.2 first "
+            "(paired_enantiomers_pocket_based/)."
+        )
+
+    for info_csv in info_csvs:
         cat = categorize_complex_by_atom_counts(
             info_csv, ligand_structures_dir, file_column=file_column
         )
-
-        if group_key in invalid_only:
-            cat["category"] = "invalid"
-            cat["manual_label"] = "invalid"
-            cat["category_reason"] = "manual_curation_invalid"
-            category_rows.append(cat)
-            continue
-
-        manual = by_subtype.get(group_key) if group_key else None
-        cat["category"] = "1"
-        cat["manual_label"] = manual
-        cat["category_reason"] = (
-            f"manual_curation_{manual}" if manual else "manual_curation_training"
-        )
-
         dist_df, errors = compute_atom_distances_for_complex(
             info_csv, ligand_structures_dir, file_column=file_column
         )
         all_errors.extend(errors)
         if has_cross_tag_distance_pairs(dist_df):
             all_distance_tables.append(dist_df)
-        else:
-            failure = cross_tag_feature_failure_reason(cat, errors)
-            cat["category_reason"] = f"{cat['category_reason']};{failure}"
+        group_rows.append(cat)
 
-        category_rows.append(cat)
-
-    _finalize_and_write_categories(
-        category_rows,
+    _finalize_and_write_feature_table(
+        group_rows,
         all_distance_tables,
         all_errors,
         out_dir,
