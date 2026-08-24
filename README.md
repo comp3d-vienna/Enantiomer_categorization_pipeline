@@ -88,8 +88,6 @@ Enantiomers_binding_conformation/
 
 ## Installation
 
-This pipeline is distributed from GitHub, not PyPI. Obtain Schrödinger, UniCON, and LigandExtractor yourself ([Prerequisites](#prerequisites)).
-
 ```bash
 git clone git@github.com:Huanni05/enantiomer_binding_conformation.git
 cd enantiomer_binding_conformation
