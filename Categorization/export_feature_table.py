@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Build a per-group feature table of closest-pair RMSD and SILIRID similarity.
+Build a per-group feature table of maximum-relatedness RMSD and SILIRID similarity.
 
 Reads ``feature_table.csv`` from ``whole_process.py`` and adds SILIRID similarity
-of the closest pair plus the two 160-D count fingerprints.
+of the maximum-relatedness m0–m1 pair plus the two 160-D count fingerprints.
 """
 
 from __future__ import annotations
@@ -20,9 +20,7 @@ if str(_CATEGORIZATION_DIR) not in sys.path:
 
 import paths
 from Interaction_type_score_refine import (
-    SILIRID_SIMILARITY_METRIC,
     STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP,
-    STRUCTURE_SILIRID_LEN,
     build_file_signatures,
     format_silirid_fingerprint,
     min_max_similarity,
@@ -30,38 +28,29 @@ from Interaction_type_score_refine import (
     structure_silirid_fingerprint,
 )
 
-FEATURE_COLUMNS: tuple[str, ...] = ("closest_cross_tag_rmsd_A",)
+FEATURE_COLUMNS: tuple[str, ...] = ("maximum_relatedness_rmsd_A",)
 
 FEATURE_TABLE_COLUMNS: tuple[str, ...] = (
-    "info_file",
+    "PSG_identifier",
     "n_structures",
     "n_m0_structures",
     "n_m1_structures",
-    "n_missing_or_unreadable_sdf",
     "atom_count_unique_values",
     "atom_count_by_file",
-    "atom_count_missing_files",
-    "atom_count_inconsistent_files",
-    "closest_cross_tag_file_a",
-    "closest_cross_tag_file_b",
-    "closest_cross_tag_rmsd_A",
-    "closest_cross_tag_similarity",
-    "closest_cross_tag_silirid_a",
-    "closest_cross_tag_silirid_b",
-    "similarity_metric",
-    "silirid_vector_length",
-    "silirid_count_cap",
+    "maximum_relatedness_m0_file",
+    "maximum_relatedness_m1_file",
+    "maximum_relatedness_rmsd_A",
+    "maximum_relatedness_silirid_similarity",
+    "maximum_relatedness_m0_silirid",
+    "maximum_relatedness_m1_silirid",
 )
 
 _PASSTHROUGH_COLUMNS: tuple[str, ...] = (
     "n_structures",
     "n_m0_structures",
     "n_m1_structures",
-    "n_missing_or_unreadable_sdf",
     "atom_count_unique_values",
     "atom_count_by_file",
-    "atom_count_missing_files",
-    "atom_count_inconsistent_files",
 )
 
 _DROP_COLUMNS: tuple[str, ...] = (
@@ -71,6 +60,72 @@ _DROP_COLUMNS: tuple[str, ...] = (
     "manual_label_join_method",
     "category_reason",
 )
+
+
+def psg_identifier_from_info_file(info_file: str) -> str:
+    """``g000001_inchi_b55a025257_inconsistent.csv`` -> ``g000001_b55a025257``."""
+    stem = Path(str(info_file).strip()).stem
+    for suffix in ("_inconsistent", "_consistent"):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+    if "_inchi_" in stem:
+        gid, hash_part = stem.split("_inchi_", 1)
+        hash_part = hash_part.split("_", 1)[0]
+        if gid and hash_part:
+            return f"{gid}_{hash_part}"
+    return stem
+
+
+def _info_csv_stem_candidates(identifier: str) -> list[str]:
+    """Filename stems to try when resolving a ``PSG_identifier`` to an interaction CSV."""
+    raw = str(identifier).strip()
+    if not raw:
+        return []
+    stem = Path(raw).stem if raw.endswith(".csv") else raw
+    for suffix in ("_inconsistent", "_consistent"):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+
+    candidates: list[str] = []
+    def _add(value: str) -> None:
+        if value and value not in candidates:
+            candidates.append(value)
+
+    _add(stem)
+    if "_inchi_" in stem:
+        gid, hash_part = stem.split("_inchi_", 1)
+        hash_part = hash_part.split("_", 1)[0]
+        _add(f"{gid}_inchi_{hash_part}")
+        _add(f"{gid}_{hash_part}")
+    else:
+        gid, sep, hash_part = stem.partition("_")
+        if sep and gid and hash_part:
+            _add(f"{gid}_inchi_{hash_part}")
+    return candidates
+
+
+def resolve_info_csv_path(info_dir: Path, identifier: str) -> Path | None:
+    """Find the per-group interaction CSV from ``PSG_identifier`` or a leftover filename."""
+    raw = str(identifier).strip()
+    if not raw:
+        return None
+    if raw.endswith(".csv"):
+        direct = info_dir / raw
+        if direct.is_file():
+            return direct
+        canonical = _canonical_info_file(raw)
+        candidate = info_dir / canonical
+        if candidate.is_file():
+            return candidate
+
+    for stem in _info_csv_stem_candidates(raw):
+        for suffix in (".csv", "_inconsistent.csv", "_consistent.csv"):
+            candidate = info_dir / f"{stem}{suffix}"
+            if candidate.is_file():
+                return candidate
+    return None
 
 
 def normalize_group_key(group_name: str) -> list[str]:
@@ -343,7 +398,7 @@ def build_feature_table(
     info_dir: Path,
 ) -> pd.DataFrame:
     """
-    One row per group with closest-pair RMSD and SILIRID similarity.
+    One row per group with maximum-relatedness RMSD and SILIRID similarity.
     """
     df = groups_df.copy()
     df = df.drop(columns=list(_DROP_COLUMNS), errors="ignore")
@@ -351,11 +406,14 @@ def build_feature_table(
     if df.empty:
         return pd.DataFrame(columns=list(FEATURE_TABLE_COLUMNS))
 
+    if "PSG_identifier" not in df.columns and "info_file" in df.columns:
+        df["PSG_identifier"] = df["info_file"].map(psg_identifier_from_info_file)
+
     required = (
-        "info_file",
-        "closest_cross_tag_file_a",
-        "closest_cross_tag_file_b",
-        "closest_cross_tag_rmsd_A",
+        "PSG_identifier",
+        "maximum_relatedness_m0_file",
+        "maximum_relatedness_m1_file",
+        "maximum_relatedness_rmsd_A",
     )
     missing = [col for col in required if col not in df.columns]
     if missing:
@@ -367,36 +425,39 @@ def build_feature_table(
     interaction_cache: dict[str, pd.DataFrame] = {}
     rows: list[dict[str, object]] = []
 
-    for _, row in df.sort_values("info_file").iterrows():
-        info_file = str(row["info_file"])
-        file_a = str(row.get("closest_cross_tag_file_a", "") or "").strip()
-        file_b = str(row.get("closest_cross_tag_file_b", "") or "").strip()
+    for _, row in df.sort_values("PSG_identifier").iterrows():
+        psg = str(row["PSG_identifier"])
+        lookup = (
+            str(row["info_file"])
+            if "info_file" in row.index and pd.notna(row.get("info_file"))
+            else psg
+        )
+        file_m0 = str(row.get("maximum_relatedness_m0_file", "") or "").strip()
+        file_m1 = str(row.get("maximum_relatedness_m1_file", "") or "").strip()
 
         similarity = float("nan")
-        silirid_a = ""
-        silirid_b = ""
-        if file_a and file_b:
-            csv_path = info_dir / info_file
-            if csv_path.is_file():
-                if info_file not in interaction_cache:
-                    interaction_cache[info_file] = pd.read_csv(csv_path)
-                similarity, silirid_a, silirid_b = _closest_pair_silirid(
-                    interaction_cache[info_file],
-                    file_a,
-                    file_b,
+        silirid_m0 = ""
+        silirid_m1 = ""
+        if file_m0 and file_m1:
+            csv_path = resolve_info_csv_path(info_dir, lookup)
+            if csv_path is not None:
+                cache_key = csv_path.name
+                if cache_key not in interaction_cache:
+                    interaction_cache[cache_key] = pd.read_csv(csv_path)
+                similarity, silirid_m0, silirid_m1 = _closest_pair_silirid(
+                    interaction_cache[cache_key],
+                    file_m0,
+                    file_m1,
                 )
 
         out_row: dict[str, object] = {
-            "info_file": info_file,
-            "closest_cross_tag_file_a": file_a,
-            "closest_cross_tag_file_b": file_b,
-            "closest_cross_tag_rmsd_A": row.get("closest_cross_tag_rmsd_A"),
-            "closest_cross_tag_similarity": similarity,
-            "closest_cross_tag_silirid_a": silirid_a,
-            "closest_cross_tag_silirid_b": silirid_b,
-            "similarity_metric": SILIRID_SIMILARITY_METRIC,
-            "silirid_vector_length": STRUCTURE_SILIRID_LEN,
-            "silirid_count_cap": STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP,
+            "PSG_identifier": psg,
+            "maximum_relatedness_m0_file": file_m0,
+            "maximum_relatedness_m1_file": file_m1,
+            "maximum_relatedness_rmsd_A": row.get("maximum_relatedness_rmsd_A"),
+            "maximum_relatedness_silirid_similarity": similarity,
+            "maximum_relatedness_m0_silirid": silirid_m0,
+            "maximum_relatedness_m1_silirid": silirid_m1,
         }
         for col in _PASSTHROUGH_COLUMNS:
             if col in row.index and col not in out_row:
@@ -409,8 +470,8 @@ def build_feature_table(
     ordered = [c for c in FEATURE_TABLE_COLUMNS if c in table.columns]
     extra = [c for c in table.columns if c not in ordered]
     table = table[ordered + extra]
-    if "info_file" in table.columns:
-        table = table.sort_values("info_file")
+    if "PSG_identifier" in table.columns:
+        table = table.sort_values("PSG_identifier")
     return table
 
 
@@ -451,12 +512,10 @@ def _incomplete_reason(row: pd.Series) -> str:
     unique_vals = str(row.get("atom_count_unique_values", "") or "").strip()
     if unique_vals and "," in unique_vals:
         return "inconsistent_atom_count"
-    if as_int(row.get("n_missing_or_unreadable_sdf", 0)) > 0:
+    by_file = str(row.get("atom_count_by_file", "") or "")
+    if "=missing" in by_file:
         return "missing_canonical_sdf"
-    inconsistent = str(row.get("atom_count_inconsistent_files", "") or "").strip()
-    if inconsistent:
-        return "inconsistent_atom_count"
-    return "no_computable_cross_tag_pair"
+    return "no_computable_m0_m1_pair"
 
 
 def _print_feature_completeness_summary(table: pd.DataFrame, out_dir: Path) -> None:
@@ -468,7 +527,7 @@ def _print_feature_completeness_summary(table: pd.DataFrame, out_dir: Path) -> N
     print(f"  complete closest-pair features: {n_ready}/{n_total}")
     if n_skipped == 0:
         return
-    print(f"  incomplete (cross-tag metrics not computable): {n_skipped}")
+    print(f"  incomplete (m0–m1 metrics not computable): {n_skipped}")
     skipped = table.loc[~ready].copy()
     reasons = skipped.apply(_incomplete_reason, axis=1).value_counts()
     for reason, count in reasons.items():
@@ -532,7 +591,10 @@ def main() -> None:
         leftover.unlink()
 
     print(f"Wrote {len(table)} row(s) to {out_csv}")
-    print(f"  SILIRID fingerprints: closest_cross_tag_silirid_a / closest_cross_tag_silirid_b")
+    print(
+        "  SILIRID fingerprints: "
+        "maximum_relatedness_m0_silirid / maximum_relatedness_m1_silirid"
+    )
     print(f"  SILIRID slot order: {legend_path}")
     print(f"  RMSD feature: {', '.join(FEATURE_COLUMNS)}")
     _print_feature_completeness_summary(table, out_csv.parent)

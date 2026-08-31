@@ -1,6 +1,6 @@
 # 4. Categorization
 
-Compute closest-pair **RMSD** and **SILIRID similarity** for every paired-enantiomer group.
+Compute maximum-relatedness **RMSD** and **SILIRID similarity** for every paired-enantiomer group.
 
 Needs [Pharmacophore generation](../Pharmacophore_generation_after_alignment/README.md) (steps 3.1–3.2). The pipeline does not read or write manual labels.
 
@@ -25,10 +25,10 @@ Earlier stages need [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/softwa
 
 | Step | Script | Output |
 |------|--------|--------|
-| 4a | `whole_process.py` | `feature_table.csv` (closest-pair RMSD + atom-count diagnostics) |
+| 4a | `whole_process.py` | `feature_table.csv` (maximum-relatedness RMSD + atom-count diagnostics) |
 | 4b | `export_feature_table.py` | same `feature_table.csv`, with SILIRID similarity and fingerprints added |
 
-The closest pair is the m0–m1 pose pair with the smallest mean atom distance. SILIRID similarity and the two 160-D count fingerprints for that pair (`closest_cross_tag_silirid_a` / `closest_cross_tag_silirid_b`) are written in step 4b. Slot order is `silirid_fingerprint_slots.csv` (20 amino acids × 8 feature types). Each slot count is capped at 3 (`silirid_count_cap`), matching the similarity calculation.
+The maximum-relatedness pair is the m0–m1 pose pair with the smallest mean atom distance. SILIRID similarity and the two 160-D count fingerprints for that pair (`maximum_relatedness_m0_silirid` / `maximum_relatedness_m1_silirid`) are written in step 4b. Slot order is `silirid_fingerprint_slots.csv` (20 amino acids × 8 feature types). Each slot count is capped at 3, matching the similarity calculation. The group identifier is `PSG_identifier` (`{group_id}_{inchi_hash}`, e.g. `g000001_b55a025257`).
 
 ## Outputs (`Data/Categorization/`)
 
@@ -38,4 +38,4 @@ feature_table_incomplete.csv                   # groups missing RMSD
 silirid_fingerprint_slots.csv                  # 160-D SILIRID slot order
 ```
 
-This is the last pipeline stage. Closest-pair RMSD and SILIRID features are the reproducible outputs.
+Closest-pair RMSD and SILIRID features are the reproducible outputs.

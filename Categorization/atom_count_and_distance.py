@@ -265,9 +265,9 @@ def closest_cross_tag_pair_per_complex(dist_df: pd.DataFrame) -> pd.DataFrame:
         rows.append(
             {
                 "info_file": info_file,
-                "closest_cross_tag_file_a": best["file_a"],
-                "closest_cross_tag_file_b": best["file_b"],
-                "closest_cross_tag_rmsd_A": float(best["pair_rmsd"]),
+                "maximum_relatedness_m0_file": best["file_a"],
+                "maximum_relatedness_m1_file": best["file_b"],
+                "maximum_relatedness_rmsd_A": float(best["pair_rmsd"]),
             }
         )
     return pd.DataFrame(rows)
@@ -279,7 +279,7 @@ def _finalize_and_write_feature_table(
     all_errors: list[dict[str, object]],
     out_dir: Path,
 ) -> None:
-    from export_feature_table import FEATURE_TABLE_COLUMNS
+    from export_feature_table import FEATURE_TABLE_COLUMNS, psg_identifier_from_info_file
 
     feature_csv = out_dir / "feature_table.csv"
     for leftover in ("complex_categories.csv", "feature_table_missing_manual_label.csv"):
@@ -293,6 +293,9 @@ def _finalize_and_write_feature_table(
         "manual_label",
         "manual_label_join_method",
         "category_reason",
+        "n_missing_or_unreadable_sdf",
+        "atom_count_missing_files",
+        "atom_count_inconsistent_files",
     )
 
     if not group_rows:
@@ -314,18 +317,18 @@ def _finalize_and_write_feature_table(
         pd.DataFrame(all_errors).to_csv(out_dir / "atom_distance_errors.csv", index=False)
 
     categories_updated = categories_df.copy()
-    categories_updated["closest_cross_tag_file_a"] = ""
-    categories_updated["closest_cross_tag_file_b"] = ""
-    categories_updated["closest_cross_tag_rmsd_A"] = float("nan")
+    categories_updated["maximum_relatedness_m0_file"] = ""
+    categories_updated["maximum_relatedness_m1_file"] = ""
+    categories_updated["maximum_relatedness_rmsd_A"] = float("nan")
 
     if not closest_df.empty:
         categories_updated = categories_updated.merge(
             closest_df, on="info_file", how="left", suffixes=("", "_best")
         )
         for col in (
-            "closest_cross_tag_file_a",
-            "closest_cross_tag_file_b",
-            "closest_cross_tag_rmsd_A",
+            "maximum_relatedness_m0_file",
+            "maximum_relatedness_m1_file",
+            "maximum_relatedness_rmsd_A",
         ):
             best_col = f"{col}_best"
             if best_col in categories_updated.columns:
@@ -333,10 +336,18 @@ def _finalize_and_write_feature_table(
                     categories_updated[col]
                 )
                 categories_updated = categories_updated.drop(columns=[best_col])
-        for col in ("closest_cross_tag_file_a", "closest_cross_tag_file_b"):
+        for col in ("maximum_relatedness_m0_file", "maximum_relatedness_m1_file"):
             categories_updated[col] = (
                 categories_updated[col].astype(str).replace("nan", "")
             )
+
+    if "info_file" in categories_updated.columns:
+        categories_updated["PSG_identifier"] = categories_updated["info_file"].map(
+            psg_identifier_from_info_file
+        )
+        categories_updated = categories_updated.drop(columns=["info_file"])
+        if "PSG_identifier" in categories_updated.columns:
+            sort_by = ["PSG_identifier"]
 
     ordered = [c for c in FEATURE_TABLE_COLUMNS if c in categories_updated.columns]
     extra = [c for c in categories_updated.columns if c not in ordered]

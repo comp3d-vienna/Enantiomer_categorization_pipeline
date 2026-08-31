@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Closest-pair RMSD for every paired-enantiomer group.
+Maximum-relatedness RMSD for every paired-enantiomer group.
 
-Each group gets the closest m0–m1 pair (smallest mean atom distance) and its RMSD.
-The table is written as ``feature_table.csv``; SILIRID columns are added by
-``export_feature_table.py``.
+Each group gets the m0–m1 pair with the smallest mean atom distance (maximum
+relatedness) and its RMSD. The table is written as ``feature_table.csv``;
+SILIRID columns are added by ``export_feature_table.py``.
 """
 
 from __future__ import annotations
@@ -53,8 +53,8 @@ def run(paths_cfg: Paths, *, report: bool = True) -> Path:
     if report:
         print("\n--- Closest-pair RMSD ---")
         print(f"Feature groups: {len(table)}")
-        if "closest_cross_tag_rmsd_A" in table.columns and not table.empty:
-            n_rmsd = int(table["closest_cross_tag_rmsd_A"].notna().sum())
+        if "maximum_relatedness_rmsd_A" in table.columns and not table.empty:
+            n_rmsd = int(table["maximum_relatedness_rmsd_A"].notna().sum())
             print(f"  with RMSD: {n_rmsd}/{len(table)}")
         print(
             "\nNext: add SILIRID similarity —\n"
@@ -67,7 +67,7 @@ def run(paths_cfg: Paths, *, report: bool = True) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Closest-pair RMSD for paired enantiomer groups (writes feature_table.csv)."
+        description="Maximum-relatedness RMSD for paired enantiomer groups (writes feature_table.csv)."
     )
     parser.add_argument(
         "--info-dir",

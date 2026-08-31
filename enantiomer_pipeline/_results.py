@@ -260,8 +260,9 @@ def _categorization_result(config: PipelineConfig) -> dict[str, Any]:
 
             df = pd.read_csv(feature_csv)
             total_groups = len(df)
-            if "closest_cross_tag_rmsd_A" in df.columns:
-                n_with_rmsd = int(df["closest_cross_tag_rmsd_A"].notna().sum())
+            rmsd_col = "maximum_relatedness_rmsd_A"
+            if rmsd_col in df.columns:
+                n_with_rmsd = int(df[rmsd_col].notna().sum())
         except Exception:
             n_with_rmsd = 0
 
