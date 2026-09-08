@@ -7,22 +7,6 @@ A computational pipeline for categorizing small-molecule enantiomer binding conf
 To test or reproduce the pipeline, download the "test" and "Notebook_reproduce_data" folders from [Zenodo](https://doi.org/<replace-with-created-DOI>) and place them under `Data/`. 
 To run the pipeline on your own CIF files, place your mmCIF files (`*.cif.gz`) in `Data/mmCIF/`.
 
-## Badges
-
-(Customize these badges with your own links, and check https://shields.io/ or https://badgen.net/ to see which other badges are available.)
-
-| fair-software.eu recommendations | |
-| :-- | :--  |
-| (1/5) code repository              | [![github repo badge](https://img.shields.io/badge/github-repo-000.svg?logo=github&labelColor=gray&color=blue)](https://github.com/Huanni05/enantiomer_binding_conformation) |
-| (2/5) license                      | [![github license badge](https://img.shields.io/github/license/Huanni05/enantiomer_binding_conformation)](https://github.com/Huanni05/enantiomer_binding_conformation) |
-| (3/5) community registry           | [![RSD](https://img.shields.io/badge/rsd-enantiomer_binding_conformation-00a3e3.svg)](https://www.research-software.nl/software/enantiomer_binding_conformation) |
-| (4/5) citation                     | [![DOI](https://zenodo.org/badge/DOI/<replace-with-created-DOI>.svg)](https://doi.org/<replace-with-created-DOI>)|
-| (5/5) checklist                    | [![workflow cii badge](https://bestpractices.coreinfrastructure.org/projects/<replace-with-created-project-identifier>/badge)](https://bestpractices.coreinfrastructure.org/projects/<replace-with-created-project-identifier>) |
-| howfairis                          | [![fair-software badge](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu) |
-| **Other best practices**           | &nbsp; |
-| **GitHub Actions**                 | &nbsp; |
-| Build                              | [![build](https://github.com/Huanni05/enantiomer_binding_conformation/actions/workflows/build.yml/badge.svg)](https://github.com/Huanni05/enantiomer_binding_conformation/actions/workflows/build.yml) |
-
 ## Prerequisites
 
 You need all of the following before running the pipeline. Creating the conda env is in [Installation](#installation).
