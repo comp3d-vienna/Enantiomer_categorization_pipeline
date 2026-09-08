@@ -4,7 +4,8 @@ A computational pipeline for categorizing small-molecule enantiomer binding conf
 
 ## Data
 
-Download the data from [Zenodo](https://doi.org/<replace-with-created-DOI>) and place it under `Data/`. Put your mmCIF files (`*.cif.gz`) in `Data/mmCIF/`.
+To test or reproduce the pipeline, download the "test" and "Notebook_reproduce_data" folders from [Zenodo](https://doi.org/<replace-with-created-DOI>) and place them under `Data/`. 
+To run the pipeline on your own CIF files, place your mmCIF files (`*.cif.gz`) in `Data/mmCIF/`.
 
 ## Badges
 
