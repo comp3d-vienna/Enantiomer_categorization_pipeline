@@ -109,7 +109,7 @@ def get_uniprotID(identifiers):
                     poly_resp = session.get(f"{base_polymer_url}{pdb_id}/{entity_id}")
                     poly_resp.raise_for_status()
                     entity_data = poly_resp.json()
-                    chain_ids = entity_data.get("rcsb_polymer_entity_container_identifiers", {}).get("asym_ids", [])
+                    chain_ids = entity_data.get("rcsb_polymer_entity_container_identifiers", {}).get("auth_asym_ids", [])
                     for all_chains in chain_ids:
                         if chain_id in all_chains:
                             uniprot_ids = entity_data.get("rcsb_polymer_entity_container_identifiers", {}).get("uniprot_ids", [])
