@@ -50,41 +50,60 @@ for pdb_id in "${unique_pdb_id_list[@]}"; do
     fi
 done
 
-# PrepWizard requires output paths and input files as absolute paths.
-for pdb_id in "${unique_pdb_id_list[@]}"; do
+# parallelised protein prep
+MAX_JOBS=$(( $(nproc) - 2 ))
+# maximum no. of jobs is cpu dependent
+
+run_prepwizard() {
+    pdb_id="$1"
     mae_file="${MAE_OUTPUT_DIR}/${pdb_id}.mae"
     prepped_mae_file="${PREPWIZARD_OUTPUT_DIR}/${pdb_id}_prepped.mae"
+    jobname="prep_${pdb_id}_$$"   # $$ is this worker's PID, so the name is unique per PDB
+
     if [[ -f "$prepped_mae_file" ]]; then
         echo "Prepped MAE already exists for $pdb_id. Skipping."
-        continue
+        return 0
     fi
     if [[ ! -f "$mae_file" ]]; then
         echo "MAE file not found for PDB ID $pdb_id at $mae_file"
-        continue
+        return 0
     fi
+
     echo "Running PrepWizard for $pdb_id ..."
     timeout 1200 "$SCHRODINGER/utilities/prepwizard" \
         -WAIT \
-        -JOBNAME "prep_${pdb_id}_$$" \
+        -JOBNAME "$jobname" \
         "$mae_file" "$prepped_mae_file"
     exit_status=$?
+
     if [[ $exit_status -eq 124 ]]; then
         echo "PrepWizard timed out for $pdb_id (over 20 min)."
         echo "$pdb_id" >> "$PREPWIZARD_TIMEOUT_LOG"
-        continue
+        schroedinger_job_id=$("$SCHRODINGER/jobcontrol" -list | grep "$jobname" | awk '{ print $1 }')
+        "$SCHRODINGER/jobcontrol" -kill "$schroedinger_job_id"
+        sleep 5
+        pkill -f "$jobname"          # fallback for stray child processes
+        rm -f "$prepped_mae_file"    # don't leave a partial output
+        return 0
     fi
     if [[ $exit_status -ne 0 ]]; then
         echo "PrepWizard failed for $pdb_id (exit code $exit_status)."
         echo "$pdb_id" >> "$PREPWIZARD_FAILED_LOG"
-        continue
+        return 0
     fi
     if [[ ! -s "$prepped_mae_file" ]]; then
         echo "PrepWizard produced empty output for $pdb_id."
         echo "$pdb_id" >> "$PREPWIZARD_FAILED_LOG"
-        continue
+        return 0
     fi
     echo "Successfully prepared $pdb_id"
-done
+}
+
+# workers are fresh bash processes, so the function and variables must be exported
+export -f run_prepwizard
+export SCHRODINGER MAE_OUTPUT_DIR PREPWIZARD_OUTPUT_DIR PREPWIZARD_TIMEOUT_LOG PREPWIZARD_FAILED_LOG
+
+printf '%s\n' "${unique_pdb_id_list[@]}" | xargs -P "$MAX_JOBS" -I{} bash -c 'run_prepwizard "$@"' _ {}
 
 # Collect Schrödinger PrepWizard job logs (prep_*.log) from the launch directory
 PREPWIZARD_LOG_DIR="${WORK_DIR}/Enantiomer_protein_preperation/log"
