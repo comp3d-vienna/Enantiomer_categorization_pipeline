@@ -28,7 +28,7 @@ Earlier stages need [UniCON](https://www.zbh.uni-hamburg.de/forschung/amd/softwa
 | 4a | `whole_process.py` | `feature_table.csv` (maximum-relatedness RMSD + atom-count diagnostics) |
 | 4b | `export_feature_table.py` | same `feature_table.csv`, with SILIRID similarity and fingerprints added |
 
-The maximum-relatedness pair is the m0–m1 pose pair with the smallest mean atom distance. SILIRID similarity and the two 160-D count fingerprints for that pair (`maximum_relatedness_m0_silirid` / `maximum_relatedness_m1_silirid`) are written in step 4b. Slot order is `silirid_fingerprint_slots.csv` (20 amino acids × 8 feature types). Each slot count is capped at 3, matching the similarity calculation. The group identifier is `PSG_identifier` (`{group_id}_{inchi_hash}`, e.g. `g000001_b55a025257`).
+The maximum-relatedness pair is the m0–m1 pose pair with the smallest mean atom distance. SILIRID similarity and the two 160-D count fingerprints for that pair (`maximum_relatedness_m0_silirid` / `maximum_relatedness_m1_silirid`) are written in step 4b. Slot order is `silirid_fingerprint_slots.csv` (20 amino acids × 8 feature types). Fingerprint slots store uncapped counts; min–max similarity clips each slot at 6. The group identifier is `PSG_identifier` (`{group_id}_{inchi_hash}`, e.g. `g000001_b55a025257`).
 
 ## Outputs (`Data/Categorization/`)
 

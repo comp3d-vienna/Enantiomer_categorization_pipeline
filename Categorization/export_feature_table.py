@@ -20,8 +20,9 @@ if str(_CATEGORIZATION_DIR) not in sys.path:
 
 import paths
 from Interaction_type_score_refine import (
-    STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP,
+    STRUCTURE_SILIRID_SIMILARITY_COUNT_CAP,
     build_file_signatures,
+    cap_silirid_counts,
     format_silirid_fingerprint,
     min_max_similarity,
     silirid_slots,
@@ -211,9 +212,9 @@ def _closest_pair_silirid(
     file_a: str,
     file_b: str,
     *,
-    count_cap: int | None = STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP,
+    similarity_count_cap: int | None = STRUCTURE_SILIRID_SIMILARITY_COUNT_CAP,
 ) -> tuple[float, str, str]:
-    """SILIRID similarity and fingerprints for one structure pair (no dedup filter)."""
+    """SILIRID similarity (capped) and uncapped fingerprints for one structure pair."""
     empty = (float("nan"), "", "")
     if interaction_df.empty or not file_a or not file_b:
         return empty
@@ -224,9 +225,14 @@ def _closest_pair_silirid(
         return empty
     if not sig_a or not sig_b:
         return empty
-    fp_a = structure_silirid_fingerprint(sig_a, count_cap=count_cap)
-    fp_b = structure_silirid_fingerprint(sig_b, count_cap=count_cap)
-    similarity = float(min_max_similarity(fp_a, fp_b))
+    fp_a = structure_silirid_fingerprint(sig_a)
+    fp_b = structure_silirid_fingerprint(sig_b)
+    similarity = float(
+        min_max_similarity(
+            cap_silirid_counts(fp_a, similarity_count_cap),
+            cap_silirid_counts(fp_b, similarity_count_cap),
+        )
+    )
     return similarity, format_silirid_fingerprint(fp_a), format_silirid_fingerprint(fp_b)
 
 

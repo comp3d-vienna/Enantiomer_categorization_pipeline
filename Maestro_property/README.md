@@ -2,7 +2,7 @@
 
 Convert aligned receptor PDBs to Maestro `.mae` format and assign user properties for downstream visualization and analysis.
 
-**Prerequisite:** complete [Pharmacophore generation](../Pharmacophore_generation_after_alignment/README.md) (step 3).
+**Prerequisite:** aligned structures from [Alignment](../Alignment/README.md) (step 2.3), plus the db-id list and UniProt classification file from data preprocessing.
 
 ---
 
@@ -10,47 +10,54 @@ Convert aligned receptor PDBs to Maestro `.mae` format and assign user propertie
 
 | Step | Script | Input | Output |
 |------|--------|-------|--------|
-| 5 | [`editing_meastro_property.py`](editing_meastro_property.py) | Aligned PDBs + interaction CSVs | MAE files with user properties |
+| 5 | [`editing_meastro_property_new.py`](editing_meastro_property_new.py) | Aligned PDBs + db ids + UniProt file | MAE files with user properties |
+
+This script does not use `run_maestro_property.sh`. That shell script only launches the older pocket-CSV editor, [`editing_meastro_property.py`](editing_meastro_property.py).
 
 ### Steps performed
 
 1. **PDB → MAE** — convert each file in `Data/Alignment/paired_enantiomers_aligned_structures/` using Schrödinger `structconvert`. Existing outputs in `converted_mae/` are reused and not re-converted (use `--overwrite` to force reconversion).
-2. **Property editing** — for each aligned structure (e.g. `rot-g000001_b55a025257_4tyb_chain_D`), assign Maestro user properties from pharmacophore interaction CSVs.
+2. **Property editing** — for each aligned structure (e.g. `rot-g000001_b55a025257_4tyb_chain_D`), assign Maestro user properties from the db-id list and the UniProt file.
 
 ### Maestro user properties
 
 | Property | Source | Example |
 |----------|--------|---------|
-| `s_user_ID` | Interaction TSV instance IDs, prefixed by UniProt ID (from `group_manifest.tsv`) | `['A0A009KIJ4_4tyb_3B1_A_601_m0', ...]` |
-| `s_user_group` | `group_id` + InChI hash | `{'g000001_b55a025257'}` |
+| `s_user_ID` | `{uniprot_field}_{pdb}_{ligand}_{chain}_{res}_mN`. The UniProt field is the whole second-to-last column, commas included. Several matches for the same PDB id and chain are stored as a list. | `['A0A7S3VNZ8,A0A7S3VSS7_9mh1_LUT_2_314_m1', ...]` |
+| `s_user_group` | Group token + InChI hash from the aligned filename | `{'g000001_b55a025257'}` |
 
-Property assignment follows the reference `editing_meastro_property.py` logic: pocket CSVs are matched by `group_id` and `inchi_hash` in the filename, interaction rows are matched by PDB ID and chain in the `file` column, and `s_user_enantiomer_short_hash` is omitted.
+A leading `rot-` is stripped and a trailing `_copied` on a per-chain file is ignored, so `rot-g000001_b55a025257_4tyb_chain_D.pdb` and `g000001_b55a025257_4tyb_chain_D_copied.pdb` both get `{'g000001_b55a025257'}`.
 
-Structures whose names cannot be parsed, or for which no properties can be assigned, are **not** written to `edited_mae/` or the combined MAE. They are listed in `unassigned_structures.log`.
+`s_user_ID` is attached by PDB id and chain. The m-layer suffix (`_m0`, `_m1`, …) is removed only to find the UniProt row; the value written keeps the full db id.
+
+Structures whose names cannot be parsed, or for which no properties can be assigned, are **not** written to `edited_mae_new/` or the combined MAE. They are listed in `unassigned_structures_new.log`.
 
 **Reference / copied structures without group tokens**
 
 For structures like `rot-1ks7_prepped.pdb` or `9fa6_prepped_copied.pdb`:
 
-1. **Aligned folder first** — look for matching sibling files with the same PDB ID. One output MAE is written. If siblings belong to **different groups**, `s_user_ID` and `s_user_group` are aggregated across all siblings with properties in each group. If siblings share one group (e.g. multiple chains), properties from the first matching sibling are used.
-2. **Pocket CSV fallback** — if no sibling exists, resolve a single identity from pharmacophore pocket-based CSVs (`file` column → PDB ID + chain).
-3. If no properties can be assigned, the structure is logged to `unassigned_structures.log` and skipped.
+1. Look for matching sibling files in the aligned folder with the same PDB id. One output MAE is written. `rot-<pdb>_prepped` uses per-chain siblings that are not `_copied`. `<pdb>_prepped_copied` uses per-chain `*_copied` siblings.
+2. If those siblings belong to **different groups**, `s_user_ID` and `s_user_group` are aggregated across all siblings with properties in each group. If siblings share one group (e.g. multiple chains), properties from the first matching sibling are used.
+3. If no sibling exists, the structure is logged to `unassigned_structures_new.log` and skipped.
 
 ### Inputs
 
 | Path | Source |
 |------|--------|
 | `Data/Alignment/paired_enantiomers_aligned_structures/` | Alignment step 2.3 |
-| `Data/Pharmacophore/paired_enantiomers_pocket_based/` | Pharmacophore step 3.2 |
+| `Data/db_ids_with_m_layer.txt` | One db id per line, e.g. `9mh1_LUT_2_314_m1` |
+| `Data/chiral_classification_results/filtered_enantiomer_with_uniprot_new.txt` | Instance id without the m-layer in column 1; UniProt is the second-to-last field |
+
+Both text files are resolved under the pipeline `Data/` directory (`test/` when `PIPELINE_TEST=1`). Override them with `--db-ids` and `--uniprot-file`.
 
 ### Outputs
 
 ```
 Data/Maestro_property/
-├── converted_mae/                         # PDB -> MAE conversion
-├── edited_mae/                            # per-structure MAE with properties
-├── unassigned_structures.log              # structures skipped (no properties)
-└── all_structures_with_properties.mae     # combined output (assigned only)
+├── converted_mae/                              # PDB -> MAE conversion
+├── edited_mae_new/                             # per-structure MAE with properties
+├── unassigned_structures_new.log               # structures skipped (no properties)
+└── all_structures_with_properties_new.mae      # combined output (assigned only)
 ```
 
 ---
@@ -61,16 +68,24 @@ Requires Schrödinger (`$SCHRODINGER`):
 
 ```bash
 export SCHRODINGER=/path/to/schrodinger
-bash run_maestro_property.sh
-bash run_maestro_property.sh --clean
-bash run_maestro_property.sh --skip-convert   # skip PDB->MAE conversion, reuse converted_mae/
-bash run_maestro_property.sh --overwrite   # re-run structconvert
+$SCHRODINGER/run python3 Maestro_property/editing_meastro_property_new.py
+$SCHRODINGER/run python3 Maestro_property/editing_meastro_property_new.py --skip-convert
+$SCHRODINGER/run python3 Maestro_property/editing_meastro_property_new.py --overwrite
 ```
 
-Or directly:
+`--skip-convert` reuses MAE files already in `converted_mae/`. `--overwrite` re-runs `structconvert` even when those files exist.
+
+---
+
+## Previous pocket-CSV workflow
+
+[`editing_meastro_property.py`](editing_meastro_property.py) still assigns `s_user_ID` and `s_user_group` from pharmacophore interaction CSVs. [`run_maestro_property.sh`](../run_maestro_property.sh) launches only that script and checks for the pocket-based CSVs and the categorization file. Its outputs are `edited_mae/`, `unassigned_structures.log`, and `all_structures_with_properties.mae`.
 
 ```bash
-$SCHRODINGER/run python3 Maestro_property/editing_meastro_property.py
+bash run_maestro_property.sh
+bash run_maestro_property.sh --clean
+bash run_maestro_property.sh --skip-convert
+bash run_maestro_property.sh --overwrite
 ```
 
 ---
@@ -83,5 +98,4 @@ $SCHRODINGER/run python3 Maestro_property/editing_meastro_property.py
 
 ## Related documentation
 
-- [Pharmacophore generation](../Pharmacophore_generation_after_alignment/README.md)
 - [Alignment](../Alignment/README.md)

@@ -28,7 +28,9 @@ POCKET_RESIDUE_BITS_LEN = len(AMINO_ACID_ORDER)
 
 SILIRID_SIMILARITY_METRIC = "structure_silirid_similarity"
 STRUCTURE_SILIRID_LEN = POCKET_RESIDUE_BITS_LEN * N_FEATURE_TYPES
-STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP: int | None = 5
+# Applied only when comparing fingerprints, not when writing count vectors.
+STRUCTURE_SILIRID_SIMILARITY_COUNT_CAP: int | None = 6
+STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP: int | None = STRUCTURE_SILIRID_SIMILARITY_COUNT_CAP
 FEATURE_TYPES_IN_ORDER = [
     name for name, _ in sorted(FEATURE_TYPE_INDEX.items(), key=lambda item: item[1])
 ]
@@ -154,6 +156,16 @@ def _increment_count(counts: list[int], idx: int, count_cap: int | None) -> None
         counts[idx] += 1
 
 
+def cap_silirid_counts(
+    counts: Sequence[int],
+    count_cap: int | None = STRUCTURE_SILIRID_SIMILARITY_COUNT_CAP,
+) -> tuple[int, ...]:
+    """Clip each slot for min–max similarity. ``None`` leaves counts unchanged."""
+    if count_cap is None:
+        return tuple(int(value) for value in counts)
+    return tuple(min(int(value), count_cap) for value in counts)
+
+
 def silirid_slots() -> list[tuple[str, str]]:
     """Slot order of ``structure_silirid_fingerprint``: (amino_acid, feature_type)."""
     return [
@@ -170,8 +182,9 @@ def format_silirid_fingerprint(counts: Sequence[int]) -> str:
 def structure_silirid_fingerprint(
     sig_dict: dict[int, AtomSignature],
     *,
-    count_cap: int | None = STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP,
+    count_cap: int | None = None,
 ) -> tuple[int, ...]:
+    """160-D residue×feature counts. Uncapped unless ``count_cap`` is set."""
     counts = [0] * STRUCTURE_SILIRID_LEN
     for sig in sig_dict.values():
         for slot in range(N_FEATURE_TYPES):
@@ -187,9 +200,9 @@ def structure_silirid_similarity(
     sig_m0: dict[int, AtomSignature],
     sig_m1: dict[int, AtomSignature],
     *,
-    count_cap: int | None = STRUCTURE_COUNT_RESIDUE_DEFAULT_CAP,
+    count_cap: int | None = STRUCTURE_SILIRID_SIMILARITY_COUNT_CAP,
 ) -> float:
     return min_max_similarity(
-        structure_silirid_fingerprint(sig_m0, count_cap=count_cap),
-        structure_silirid_fingerprint(sig_m1, count_cap=count_cap),
+        cap_silirid_counts(structure_silirid_fingerprint(sig_m0), count_cap),
+        cap_silirid_counts(structure_silirid_fingerprint(sig_m1), count_cap),
     )
